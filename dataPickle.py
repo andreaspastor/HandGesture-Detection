@@ -11,7 +11,7 @@ from PIL import Image
 #pourcentage pour le test 1 - split
 split = 0.9
 nbClass = 3
-pasRotation = 10 #pas de la rotation de l'image en degrée
+pasRotation = 4 #pas de la rotation de l'image en degrée
 rotation = 45
 imgSize = 64
 
@@ -29,7 +29,7 @@ data = []
 for elm in liste:
   #imread avec 0 pour ouvrir en gray scale et 1 pour ouvrir en couleur
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  
+  img = cv2.equalizeHist(img)
   """cv2.imshow('object detection', img)
   if cv2.waitKey(25) & 0xFF == ord('q'):
       cv2.destroyAllWindows()
@@ -41,11 +41,13 @@ for elm in liste:
 for elm in listeFermee:
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
   value = 1
+  img = cv2.equalizeHist(img)
   data.append([img,value])
 
 for elm in listeOuvert:
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
   value = 2
+  img = cv2.equalizeHist(img)
   data.append([img,value])
 
 random.shuffle(data)
@@ -90,6 +92,14 @@ data = 0
 random.shuffle(data_test)
 random.shuffle(data_train)
 
+XClassTest = [[] for x in range(nbClass)]
+YClassTest = [[] for y in range(nbClass)]
+for elm in data_test:
+  x = np.argmax(elm[1])
+  YClassTest[x].append(elm[1])
+  XClassTest[x].append(elm[0])
+
+
 for elm in data_train:
   X_train.append(elm[0])
   y_train.append(elm[1])
@@ -101,6 +111,8 @@ for elm in data_test:
 data_test = 0
 
 X_train, y_train, X_test, y_test = np.array(X_train), np.array(y_train), np.array(X_test), np.array(y_test)
+XClassTest, YClassTest = np.array(XClassTest), np.array(YClassTest)
+
 
 save_dir = './dataTrain/'
 if not os.path.exists(save_dir):
@@ -112,6 +124,8 @@ pickle.dump(y_train, open('./dataTrain/Ytrain.dump', 'wb'))
 pickle.dump(X_test, open('./dataTrain/Xtest.dump', 'wb'))
 pickle.dump(y_test, open('./dataTrain/Ytest.dump', 'wb'))
 
+pickle.dump(XClassTest, open('./dataTrain/XtestClass.dump', 'wb'))
+pickle.dump(YClassTest, open('./dataTrain/YtestClass.dump', 'wb'))
 
 
 

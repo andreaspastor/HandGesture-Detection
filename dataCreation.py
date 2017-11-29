@@ -35,7 +35,7 @@ def main(x):
 		ret, image_np = cap.read()
 
 		cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
-		if heardEnter():
+		if time() - t > 0.5:
 			print('shoot', cpt)
 			gray_image = cv2.resize(image_np, (imgSize,imgSize))
 			cv2.imwrite('./image/' + str(x) + '_' + str(cpt) +'.png', gray_image)

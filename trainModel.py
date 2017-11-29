@@ -6,13 +6,16 @@ import numpy as np
 import os
 from time import time
 import pickle
+import sys
 
 def recup(dossier):
   X_train = pickle.load(open('./dataTrain/Xtrain.dump', 'rb'))
   X_test = pickle.load(open('./dataTrain/Xtest.dump', 'rb'))
   y_test = pickle.load(open('./dataTrain/Ytest.dump', 'rb'))
   y_train = pickle.load(open('./dataTrain/Ytrain.dump', 'rb'))
-  return X_train, y_train, X_test, y_test
+  X_testClass = pickle.load(open('./dataTrain/XtestClass.dump', 'rb'))
+  y_testClass = pickle.load(open('./dataTrain/YtestClass.dump', 'rb'))
+  return X_train, y_train, X_test, y_test, X_testClass, y_testClass
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -75,7 +78,7 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_train, y_train, X_test, y_test = recup('dataTrain')
+X_train, y_train, X_test, y_test, X_testClass, y_testClass = recup('dataTrain')
 print(len(X_train), len(X_test))
 
 
@@ -144,8 +147,8 @@ print(layer_flat)
 print(layer_f)
 
 rate = tf.placeholder(tf.float32, shape=[])
-l_rate = 0.001#5e-4
-beta = 0.0
+l_rate = 0.0006#5e-4
+beta = 0.03
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))
 
@@ -166,18 +169,30 @@ compteur = 0
 prec = 10e100
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
-  #saver.restore(sess=sess, save_path=save_path)
+  saver.restore(sess=sess, save_path=save_path)
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
-  res, epoch = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]}), 0
-  while epoch < hm_epochs and res < 0.9999:
+  res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
+  res, epoch = [0 for x in range(n_classes)], 0
+  for no in range(n_classes):
+        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size]})
+      
+  while epoch < hm_epochs and sum(res)/len(res) < 0.99:
     epoch_loss = 0
     epoch += 1
     for g in range(0,len(X_train),batch_size):
       _, c = sess.run([optimizer, cost], feed_dict={keep_prob: 1, rate: l_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
+      
+      sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
+      sys.stdout.flush()
       epoch_loss += c
 
     tempsEcoule = time() - t
-    print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res,'batch_size :',batch_size,'LRate :',l_rate, 'Time :', tempsEcoule)
+
+    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
+    sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
+    for no in range(n_classes):
+      sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
+    sys.stdout.write('\n')
     t = time()
     if epoch_loss > prec:
       compteur += 1
@@ -186,8 +201,10 @@ with tf.Session() as sess:
         compteur -= 1
       prec = epoch_loss
       res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
-      res = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
-      saver.save(sess=sess, save_path=save_path)
+      res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
+      for no in range(n_classes):
+        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size]})
+      #saver.save(sess=sess, save_path=save_path)
     if compteur >= 2:
       compteur = 0
       l_rate /= 1.5
