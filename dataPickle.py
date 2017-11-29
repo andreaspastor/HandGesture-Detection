@@ -7,7 +7,16 @@ import pickle
 from PIL import Image
 
 
+#pourcentage d'exemples pour train le modèle
+#pourcentage pour le test 1 - split
+split = 0.9
+nbClass = 6
+pasRotation = 20 #pas de la rotation de l'image en degrée
+
+#Afin de récupérer l'ensemble des noms des images stockées 
 liste = glob.glob('./image/**')
+
+#Chargement en RAM des images trouvées
 data = []
 for elm in liste:
   img = np.array(cv2.imread(elm, 0))
@@ -18,14 +27,14 @@ random.shuffle(data)
 X_train = []
 y_train = []
 data_train = []
-for elm in data[:int(len(data)*0.90)]:
-  classe = np.zeros(6)
+for elm in data[:int(len(data)*split)]:
+  classe = np.zeros(nbClass)
   classe[elm[1]] = 1
   img1 = Image.fromarray(elm[0])
   img2 = Image.fromarray(np.flip(elm[0],1))
   data_train.append([np.flip(elm[0],1), classe])
   data_train.append([elm[0], classe])
-  for x in range(20, 360, 20):
+  for x in range(pasRotation, 360, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
     data_train.append([np.array(img1a), classe])
@@ -34,14 +43,14 @@ for elm in data[:int(len(data)*0.90)]:
 X_test = []
 y_test = []
 data_test = []
-for elm in data[int(len(data)*0.90):]:
-  classe = np.zeros(6)
+for elm in data[int(len(data)*split):]:
+  classe = np.zeros(nbClass)
   classe[elm[1]] = 1
   img1 = Image.fromarray(elm[0])
   img2 = Image.fromarray(np.flip(elm[0],1))
   data_test.append([np.flip(elm[0],1), classe])
   data_test.append([elm[0], classe])
-  for x in range(20, 360, 20):
+  for x in range(pasRotation, 360, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
     data_test.append([np.array(img1a), classe])
