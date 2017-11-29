@@ -1,3 +1,11 @@
+# Images dataset
+
+image/
+
+# Training data
+
+dataTrain/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
