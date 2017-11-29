@@ -1,10 +1,11 @@
 # Images dataset
-
 image/
 
 # Training data
-
 dataTrain/
+
+# Final model
+final_model/
 
 # Windows image file caches
 Thumbs.db

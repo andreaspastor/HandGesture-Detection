@@ -10,20 +10,48 @@ from PIL import Image
 #pourcentage d'exemples pour train le modèle
 #pourcentage pour le test 1 - split
 split = 0.9
-nbClass = 6
-pasRotation = 20 #pas de la rotation de l'image en degrée
+nbClass = 3
+pasRotation = 10 #pas de la rotation de l'image en degrée
+rotation = 45
+imgSize = 64
 
 #Afin de récupérer l'ensemble des noms des images stockées 
-liste = glob.glob('./image/**')
+liste = glob.glob('./image/*.png')
+listeFermee = glob.glob('./image/1/**')
+listeOuvert = glob.glob('./image/2/**')
+
+listeFermee2 = glob.glob('./image/Triesch_Dataset/1/**')
+listeOuvert2 = glob.glob('./image/Triesch_Dataset/2/**')
+
 
 #Chargement en RAM des images trouvées
 data = []
 for elm in liste:
-  img = np.array(cv2.imread(elm, 0))
+  #imread avec 0 pour ouvrir en gray scale et 1 pour ouvrir en couleur
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  
+  """cv2.imshow('object detection', img)
+  if cv2.waitKey(25) & 0xFF == ord('q'):
+      cv2.destroyAllWindows()
+      break"""
   value = int(elm.split('\\')[1][:1])
   data.append([img,value])
+
+
+for elm in listeFermee:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 1
+  data.append([img,value])
+
+for elm in listeOuvert:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 2
+  data.append([img,value])
+
 random.shuffle(data)
 
+
+#Traitement des images pour l'entrainement du modèle
 X_train = []
 y_train = []
 data_train = []
@@ -34,12 +62,14 @@ for elm in data[:int(len(data)*split)]:
   img2 = Image.fromarray(np.flip(elm[0],1))
   data_train.append([np.flip(elm[0],1), classe])
   data_train.append([elm[0], classe])
-  for x in range(pasRotation, 360, pasRotation):
+  for x in range(-rotation, rotation, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
     data_train.append([np.array(img1a), classe])
     data_train.append([np.array(img2a), classe])
 
+
+#Traitement des images pour le test du modèle
 X_test = []
 y_test = []
 data_test = []
@@ -50,11 +80,11 @@ for elm in data[int(len(data)*split):]:
   img2 = Image.fromarray(np.flip(elm[0],1))
   data_test.append([np.flip(elm[0],1), classe])
   data_test.append([elm[0], classe])
-  for x in range(pasRotation, 360, pasRotation):
+  for x in range(-rotation, rotation, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
     data_test.append([np.array(img1a), classe])
-    data_test.append([np.array(img2a), classe]) 
+    data_test.append([np.array(img2a), classe])
 
 data = 0
 random.shuffle(data_test)
