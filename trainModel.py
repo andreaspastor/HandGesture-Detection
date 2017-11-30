@@ -88,7 +88,7 @@ print(y_train[0])
 
 input("recuperation done")
 # Convolutional Layer 1.
-filter_size1 = 5
+filter_size1 = 3
 num_filters1 = 8
 num_filters2 = 64
 num_filters3 = 128
@@ -118,20 +118,34 @@ layer_conv1a1, weights_conv1a1 = \
                    use_pooling=True)
 
 layer_conv1b, weights_conv1b = \
-    new_conv_layer("conv1b",input=layer_conv1a,
+    new_conv_layer("conv1b",input=layer_conv1a1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1b1, weights_conv1b1 = \
+    new_conv_layer("conv1b1",input=layer_conv1b,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
-    new_conv_layer("conv1c",input=layer_conv1b,
+    new_conv_layer("conv1c",input=layer_conv1b1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1c1, weights_conv1c1 = \
+    new_conv_layer("conv1c1",input=layer_conv1c,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
-layer_flat, num_features = flatten_layer(layer_conv1c)
+layer_flat, num_features = flatten_layer(layer_conv1c1)
 
 layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_inputs=num_features,
@@ -204,7 +218,7 @@ with tf.Session() as sess:
       res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
       for no in range(n_classes):
         res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size]})
-      #saver.save(sess=sess, save_path=save_path)
+      saver.save(sess=sess, save_path=save_path)
     if compteur >= 2:
       compteur = 0
       l_rate /= 1.5
