@@ -88,8 +88,8 @@ print(y_train[0])
 
 input("recuperation done")
 # Convolutional Layer 1.
-filter_size1 = 3
-num_filters1 = 8
+filter_size1 = 2
+num_filters1 = 32
 num_filters2 = 64
 num_filters3 = 128
 
@@ -183,7 +183,7 @@ compteur = 0
 prec = 10e100
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
-  saver.restore(sess=sess, save_path=save_path)
+  #saver.restore(sess=sess, save_path=save_path)
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
   res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
   res, epoch = [0 for x in range(n_classes)], 0

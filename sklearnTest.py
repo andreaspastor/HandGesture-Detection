@@ -137,7 +137,7 @@ plt.scatter(xx,yy, label=name)
 
 plt.legend(loc="upper right")
 plt.xlabel("Classifier")
-plt.ylabel("Test Error Rate")
+plt.ylabel("Test Success Rate")
 plt.show()
 
 

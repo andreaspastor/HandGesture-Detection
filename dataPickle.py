@@ -23,6 +23,8 @@ listeOuvert = glob.glob('./image/2/**')
 listeFermee2 = glob.glob('./image/Triesch_Dataset/1/**')
 listeOuvert2 = glob.glob('./image/Triesch_Dataset/2/**')
 
+listeFermee3 = glob.glob('./image/1_Marcel/**')
+listeOuvert3 = glob.glob('./image/2_Marcel/**')
 
 #Chargement en RAM des images trouvées
 data = []
@@ -50,6 +52,29 @@ for elm in listeOuvert:
   img = cv2.equalizeHist(img)
   data.append([img,value])
 
+for elm in listeFermee2:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 1
+  img = cv2.equalizeHist(img)
+  data.append([img,value])
+
+for elm in listeOuvert2:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 2
+  img = cv2.equalizeHist(img)
+  data.append([img,value])
+
+for elm in listeFermee3:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 1
+  img = cv2.equalizeHist(img)
+  data.append([img,value])
+
+for elm in listeOuvert3:
+  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+  value = 2
+  img = cv2.equalizeHist(img)
+  data.append([img,value])
 random.shuffle(data)
 
 
