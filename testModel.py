@@ -70,14 +70,14 @@ def new_fc_layer(name,input,          # The previous layer.
 
 # Convolutional Layer 1.
 filter_size1 = 2
-num_filters1 = 4
+num_filters1 = 16
 num_filters2 = 64
 num_filters3 = 128
 
 
 n_classes = 3
-batch_size = 512
-imgSize = 128
+batch_size = 256
+imgSize = 64
 
 x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
 x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])
@@ -89,9 +89,44 @@ layer_conv1a, weights_conv1a = \
                    num_input_channels=1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1a1, weights_conv1a1 = \
+    new_conv_layer("conv1a1",input=layer_conv1a,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
                    use_pooling=True)
 
-layer_flat, num_features = flatten_layer(layer_conv1a)
+layer_conv1b, weights_conv1b = \
+    new_conv_layer("conv1b",input=layer_conv1a1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1b1, weights_conv1b1 = \
+    new_conv_layer("conv1b1",input=layer_conv1b,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=True)
+
+layer_conv1c, weights_conv1c = \
+    new_conv_layer("conv1c",input=layer_conv1b1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1c1, weights_conv1c1 = \
+    new_conv_layer("conv1c1",input=layer_conv1c,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=True)
+
+layer_flat, num_features = flatten_layer(layer_conv1c1)
 
 layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_inputs=num_features,
@@ -118,7 +153,7 @@ accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 
 saver = tf.train.Saver()
-save_dir = 'final_model/'
+save_dir = 'final_model16/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')

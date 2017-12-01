@@ -22,7 +22,7 @@ def heardEnter():
 cap = cv2.VideoCapture(0)
 imgSize = 256
 cameraSize = (800, 600)
-nbClass = 3
+nbClass = 1
 
 # 0 => rien
 # 1 => Poing fermé
@@ -38,7 +38,7 @@ def main(x):
 		if time() - t > 0.5:
 			print('shoot', cpt)
 			gray_image = cv2.resize(image_np, (imgSize,imgSize))
-			cv2.imwrite('./image/' + str(x) + '_' + str(cpt) +'.png', gray_image)
+			cv2.imwrite('./image/0_falseMarcel/' + str(x) + '_' + str(cpt) +'.png', gray_image)
 			t = time()
 			cpt += 1
 

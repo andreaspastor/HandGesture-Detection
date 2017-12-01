@@ -89,7 +89,7 @@ print(y_train[0])
 input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 2
-num_filters1 = 32
+num_filters1 = 16
 num_filters2 = 64
 num_filters3 = 128
 
@@ -172,7 +172,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_model/'
+save_dir = 'final_model16/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
