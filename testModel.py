@@ -69,13 +69,13 @@ def new_fc_layer(name,input,          # The previous layer.
 
 
 # Convolutional Layer 1.
-filter_size1 = 2
+filter_size1 = 3
 num_filters1 = 16
 num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 3
+n_classes = 10
 batch_size = 256
 imgSize = 64
 
@@ -153,7 +153,7 @@ accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 
 saver = tf.train.Saver()
-save_dir = 'final_model16/'
+save_dir = 'final_model_10_16/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -272,7 +272,7 @@ with tf.Session() as sess:
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
     t2 = time.time()
     gray_image = cv2.equalizeHist(gray_image)
-    result = np.argmax(y_pred.eval({x:[gray_image]})) + 1
+    result = np.argmax(y_pred.eval({x:[gray_image]}))
 
     print(result, 1/(time.time() - t), 1/(time.time() - t2))
     if result == 5:

@@ -3,26 +3,34 @@ import numpy as np
 import os
 from time import time, sleep
 
-
 import sys
-import select
 
-def heardEnter():
-    i,o,e = select.select([sys.stdin],[],[],0.0001)
-    for s in i:
-        if s == sys.stdin:
-            input = sys.stdin.readline()
-            return True
-    return False
+class VideoCamera(object):
+    def __init__(self, index=0):
+        self.video = cv2.VideoCapture(index)
+        self.index = index
+        print(self.video.isOpened())
+
+    def __del__(self):
+        self.video.release()
+    
+    def get_frame(self, in_grayscale=False):
+        _, frame = self.video.read()
+        if in_grayscale:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame
 
 #info sur le geste à faire
 #recup auto du numero de l'image à ajouter 0_{nb}
 #save in color or in gray
 
-cap = cv2.VideoCapture(0)
+# Open a new thread to manage the external cv2 interaction
+cv2.startWindowThread()
+cap = VideoCamera()
+
 imgSize = 256
 cameraSize = (800, 600)
-nbClass = 1
+nbClass = 10
 
 # 0 => rien
 # 1 => Poing fermé
@@ -31,27 +39,32 @@ nbClass = 1
 def main(x):
 	t = time() + 1
 	cpt = int(sys.argv[1])
+	pauseState = True
+	print('Pause :', pauseState, 'Press SPACE to start')
+
 	while cpt < int(sys.argv[1]) + int(sys.argv[2]):
-		ret, image_np = cap.read()
+		image_np = cap.get_frame()
 
 		cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
-		if time() - t > 0.5:
+		if time() - t > 0.1 and not(pauseState):
 			print('shoot', cpt)
 			gray_image = cv2.resize(image_np, (imgSize,imgSize))
-			cv2.imwrite('./image/0_falseMarcel/' + str(x) + '_' + str(cpt) +'.png', gray_image)
+			cv2.imwrite('./image/' + str(x) + '_' + str(cpt) +'.png', gray_image)
 			t = time()
 			cpt += 1
 
-		if cv2.waitKey(25) & 0xFF == ord('q'):
+		key = cv2.waitKey(25) & 0xFF 
+		if key == ord(' '):
+			pauseState = not(pauseState)
+			print('Pause :', pauseState, 'Press SPACE to change state')
+		elif key == ord('q'):
 			cv2.destroyAllWindows()
 			break
 
-ret, image_np = cap.read()
 save_dir = 'image/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
-for x in range(0, nbClass):
+for x in range(nbClass):
 	print('Lancement main :', x)
 	main(x)

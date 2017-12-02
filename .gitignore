@@ -6,6 +6,11 @@ dataTrain/
 
 # Final model
 final_model/
+final_model16/
+final_model_10_16/
+
+#Solution build
+build/
 
 # Windows image file caches
 Thumbs.db
