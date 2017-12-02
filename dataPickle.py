@@ -7,12 +7,13 @@ import pickle
 from PIL import Image
 
 
+
 #pourcentage d'exemples pour train le modèle
 #pourcentage pour le test 1 - split
 split = 0.9
-nbClass = 3
+nbClass = 10
 pasRotation = 4 #pas de la rotation de l'image en degrée
-rotation = 45
+rotation = 30
 imgSize = 64
 
 #Afin de récupérer l'ensemble des noms des images stockées 
