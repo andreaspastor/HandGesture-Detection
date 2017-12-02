@@ -154,7 +154,6 @@ pickle.dump(XClassTest, open('./dataTrain/XtestClass.dump', 'wb'))
 pickle.dump(YClassTest, open('./dataTrain/YtestClass.dump', 'wb'))
 
 
-
 print("Nombres exemples d'entrainement", len(X_train))
 print("Nombres exemples de test", len(X_test))
 

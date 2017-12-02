@@ -13,9 +13,7 @@ def recup(folder):
   X_test = pickle.load(open('./'+ folder + '/Xtest.dump', 'rb'))
   y_test = pickle.load(open('./'+ folder + '/Ytest.dump', 'rb'))
   y_train = pickle.load(open('./'+ folder + '/Ytrain.dump', 'rb'))
-  X_testClass = pickle.load(open('./'+ folder + '/XtestClass.dump', 'rb'))
-  y_testClass = pickle.load(open('./'+ folder + '/YtestClass.dump', 'rb'))
-  return X_train, y_train, X_test, y_test, X_testClass, y_testClass
+  return X_train, y_train, X_test, y_test
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -78,7 +76,7 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_train, y_train, X_test, y_test, X_testClass, y_testClass = recup('dataTrain')
+X_train, y_train, X_test, y_test = recup('dataTrain_box')
 print(len(X_train), len(X_test))
 
 
@@ -89,12 +87,12 @@ print(y_train[0])
 input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 3
-num_filters1 = 16
+num_filters1 = 8
 num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 10
+n_classes = 4
 batch_size = 256
 imgSize = 64
 
@@ -108,53 +106,30 @@ layer_conv1a, weights_conv1a = \
                    num_input_channels=1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
-                   use_pooling=False)
-
-layer_conv1a1, weights_conv1a1 = \
-    new_conv_layer("conv1a1",input=layer_conv1a,
-                   num_input_channels=num_filters1,
-                   filter_size=filter_size1,
-                   num_filters=num_filters1,
                    use_pooling=True)
 
 layer_conv1b, weights_conv1b = \
-    new_conv_layer("conv1b",input=layer_conv1a1,
-                   num_input_channels=num_filters1,
-                   filter_size=filter_size1,
-                   num_filters=num_filters1,
-                   use_pooling=False)
-
-layer_conv1b1, weights_conv1b1 = \
-    new_conv_layer("conv1b1",input=layer_conv1b,
+    new_conv_layer("conv1b",input=layer_conv1a,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
-    new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters1,
-                   filter_size=filter_size1,
-                   num_filters=num_filters1,
-                   use_pooling=False)
-
-layer_conv1c1, weights_conv1c1 = \
-    new_conv_layer("conv1c1",input=layer_conv1c,
+    new_conv_layer("conv1c",input=layer_conv1b,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
-layer_flat, num_features = flatten_layer(layer_conv1c1)
+layer_flat, num_features = flatten_layer(layer_conv1c)
 
 layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_inputs=num_features,
                          num_outputs=n_classes,
                          use_nonlinear=False)
 
-y_pred = tf.nn.softmax(layer_f)
-y_pred_cls = tf.argmax(y_pred, dimension=1)
-get_test = tf.argmax(y_test,dimension=1)
+y_pred = layer_f
 
 print(layer_conv1a)
 print(layer_flat)
@@ -163,16 +138,15 @@ print(layer_f)
 rate = tf.placeholder(tf.float32, shape=[])
 l_rate = 0.001#5e-4
 beta = 0.01
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
+cost = tf.reduce_mean(tf.square(y_pred - y)) \
      + beta * (tf.nn.l2_loss(weights_f))
 
 optimizer = tf.train.AdamOptimizer(rate).minimize(cost)
 
-correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
-accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
+accuracy = tf.reduce_mean(tf.square(y_pred - y))
 
 saver = tf.train.Saver()
-save_dir = 'final_model_10_16/'
+save_dir = 'final_model_box/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -186,11 +160,9 @@ with tf.Session() as sess:
   #saver.restore(sess=sess, save_path=save_path)
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
   res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
-  res, epoch = [0 for x in range(n_classes)], 0
-  for no in range(n_classes):
-        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size]})
+  epoch = 0
       
-  while epoch < hm_epochs and sum(res)/len(res) < 0.99:
+  while epoch < hm_epochs:
     epoch_loss = 0
     epoch += 1
     for g in range(0,len(X_train),batch_size):
@@ -204,8 +176,6 @@ with tf.Session() as sess:
 
     sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
     sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
-    for no in range(n_classes):
-      sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
     sys.stdout.write('\n')
     t = time()
     if epoch_loss > prec:
@@ -216,8 +186,6 @@ with tf.Session() as sess:
       prec = epoch_loss
       res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
       res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
-      for no in range(n_classes):
-        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size]})
       saver.save(sess=sess, save_path=save_path)
     if compteur >= 2:
       compteur = 0
