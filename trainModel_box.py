@@ -71,7 +71,7 @@ def new_fc_layer(name,input,          # The previous layer.
 
     layer = tf.matmul(input, weights) + biases
     if use_nonlinear:
-      layer = tf.nn.relu(layer)
+      layer = tf.nn.sigmoid(layer)
 
     return layer, weights
 
@@ -86,8 +86,8 @@ print(y_train[0])
 
 input("recuperation done")
 # Convolutional Layer 1.
-filter_size1 = 3
-num_filters1 = 8
+filter_size1 = 5
+num_filters1 = 32
 num_filters2 = 64
 num_filters3 = 128
 
@@ -106,28 +106,49 @@ layer_conv1a, weights_conv1a = \
                    num_input_channels=1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1a1, weights_conv1a1 = \
+    new_conv_layer("conv1a1",input=layer_conv1a,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
                    use_pooling=True)
 
 layer_conv1b, weights_conv1b = \
-    new_conv_layer("conv1b",input=layer_conv1a,
+    new_conv_layer("conv1b",input=layer_conv1a1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1b1, weights_conv1b1 = \
+    new_conv_layer("conv1b1",input=layer_conv1b,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
-    new_conv_layer("conv1c",input=layer_conv1b,
+    new_conv_layer("conv1c",input=layer_conv1b1,
+                   num_input_channels=num_filters1,
+                   filter_size=filter_size1,
+                   num_filters=num_filters1,
+                   use_pooling=False)
+
+layer_conv1c1, weights_conv1c1 = \
+    new_conv_layer("conv1c1",input=layer_conv1c,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
                    num_filters=num_filters1,
                    use_pooling=True)
 
-layer_flat, num_features = flatten_layer(layer_conv1c)
+layer_flat, num_features = flatten_layer(layer_conv1c1)
 
 layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_inputs=num_features,
                          num_outputs=n_classes,
-                         use_nonlinear=False)
+                         use_nonlinear=True)
 
 y_pred = layer_f
 
@@ -135,15 +156,17 @@ print(layer_conv1a)
 print(layer_flat)
 print(layer_f)
 
+
+
 rate = tf.placeholder(tf.float32, shape=[])
-l_rate = 0.001#5e-4
-beta = 0.01
+l_rate = 0.00005#5e-4
+beta = 0.00
 cost = tf.reduce_mean(tf.square(y_pred - y)) \
      + beta * (tf.nn.l2_loss(weights_f))
 
 optimizer = tf.train.AdamOptimizer(rate).minimize(cost)
 
-accuracy = tf.reduce_mean(tf.square(y_pred - y))
+accuracy = tf.sqrt(tf.reduce_mean(tf.square(y_pred - y)))
 
 saver = tf.train.Saver()
 save_dir = 'final_model_box/'
@@ -151,13 +174,13 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
 
-hm_epochs = 150
+hm_epochs = 1500
 t = time()
 compteur = 0
 prec = 10e100
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
-  #saver.restore(sess=sess, save_path=save_path)
+  saver.restore(sess=sess, save_path=save_path)
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size]})
   res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size]})
   epoch = 0

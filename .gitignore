@@ -3,11 +3,14 @@ image/
 
 # Training data
 dataTrain/
+dataTrain_box/
 
 # Final model
 final_model/
 final_model16/
 final_model_10_16/
+final_model_15_16/
+final_model_box
 
 #Solution build
 build/

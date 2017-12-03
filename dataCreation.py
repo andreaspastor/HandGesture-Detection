@@ -34,7 +34,19 @@ nbClass = 10
 
 # 0 => rien
 # 1 => Poing fermé
-# 2 => Point ouvert
+# 2 => pouce haut
+# 3 => pouce bas
+# 4 => main ouverte doigts serrés
+# 5 => main ouverte doigts ecartés
+# 6 => pouce + auriculaire horizontal
+# 7 => pouce + auriculaire vertical
+# 8 => victoire
+# 9 => C
+# 10 => ok
+# 11 => victoire serré
+# 12 => victoire serré horizontal
+# 13 => rock and roll
+# 14 => rock and roll horizontal
 
 def main(x):
 	t = time() + 1
@@ -65,6 +77,8 @@ save_dir = 'image/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
+main(14)
+df()
 for x in range(nbClass):
 	print('Lancement main :', x)
 	main(x)

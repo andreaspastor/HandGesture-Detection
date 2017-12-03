@@ -70,12 +70,12 @@ def new_fc_layer(name,input,          # The previous layer.
 
 # Convolutional Layer 1.
 filter_size1 = 3
-num_filters1 = 16
+num_filters1 = 32
 num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 10
+n_classes = 15
 batch_size = 256
 imgSize = 64
 
@@ -140,20 +140,14 @@ print(layer_conv1a)
 print(layer_flat)
 print(layer_f)
 
-rate = tf.placeholder(tf.float32, shape=[])
-l_rate = 0.001#5e-4
-beta = 0.01
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
-     + beta * (tf.nn.l2_loss(weights_f))
 
-optimizer = tf.train.AdamOptimizer(rate).minimize(cost)
 
 correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 
 saver = tf.train.Saver()
-save_dir = 'final_model_10_16/'
+save_dir = 'final_model_15_16/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -258,28 +252,29 @@ def sliding():
     return None
 
 
+gestures = ['None', 'fist', 'thumb up', 'thumb down', \
+            'stop', 'catch', 'swing', 'phone', 'victory', \
+            'C', 'okay', '2 fingers', '2 fingers horiz', \
+            'rock&roll', 'rock&roll horiz']
 
-
+liste = glob.glob('./image/**')
 cap = cv2.VideoCapture(0)
 t = time.time()
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
-  while True:
+  for elm in liste[::-10]:
     ret, image_np = cap.read()
-    
+    image_np = cv2.imread(elm)
     cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
     t2 = time.time()
     gray_image = cv2.equalizeHist(gray_image)
     result = np.argmax(y_pred.eval({x:[gray_image]}))
 
-    print(result, 1/(time.time() - t), 1/(time.time() - t2))
-    if result == 5:
-    	print('call sliding')
-    	sliding()
+    print(gestures[result], 1/(time.time() - t), 1/(time.time() - t2))
     
     t = time.time()
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(50) & 0xFF == ord('q'):
       cv2.destroyAllWindows()
       break

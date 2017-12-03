@@ -14,7 +14,7 @@ split = 0.9
 
 type = ['WristThumb', 'WristPinky', 'Knuckle1', 'Knuckle2', 'FingerTip']
 data = []
-for x, elm in enumerate(liste):
+for x, elm in enumerate(liste[:]):
 	with open(elm, "r" ) as f:
 		html_doc = f.read()
 	soup = bs.BeautifulSoup(html_doc, 'html5lib')
@@ -53,8 +53,40 @@ data_train = []
 for elm in data[:int(len(data)*split)]:
   img1 = Image.fromarray(elm[0])
   img2 = Image.fromarray(np.flip(elm[0],1))
-  data_train.append([np.flip(elm[0],1), [1-elm[3], elm[2], 1-elm[1], elm[4]]])
+
+  """cv2.imshow('elm0', elm[0])
+  cv2.imshow('elm0 + 90', np.array(Image.fromarray(elm[0]).rotate(90)))
+  cv2.imshow('elm0 flip1', np.flip(elm[0],1))
+  cv2.imshow('elm0 flip1 + 90', np.array(Image.fromarray(np.flip(elm[0],1)).rotate(90)))
+  cv2.imshow('elm0 flip0', np.flip(elm[0],0))
+  cv2.imshow('elm0 flip0 + 90', np.array(Image.fromarray(np.flip(elm[0],0)).rotate(90)))
+  cv2.imshow('elm0 flip', np.flip(np.flip(elm[0],0),1))
+  cv2.imshow('elm0 flip + 90', np.array(Image.fromarray(np.flip(np.flip(elm[0],0),1)).rotate(90)))
+
+  key = cv2.waitKey(100000) & 0x0F
+  cv2.destroyAllWindows()
+  df()"""
+  """print(elm[1], elm[2], elm[3], elm[4])
+  print(elm[2], 1-elm[3], elm[4], 1-elm[1])
+  print(elm[1], 1-elm[4], elm[3], 1-elm[2])
+  print(1-elm[4], 1-elm[3], 1-elm[2], 1-elm[1])
+  print(1-elm[3], 1-elm[4], 1-elm[1], 1-elm[2])
+  print(1-elm[4], elm[1], 1-elm[2], elm[3])
+  print(1-elm[3], elm[2], 1-elm[1], elm[4])
+  print(elm[2], elm[1], elm[4], elm[3])
+  input()"""
   data_train.append([elm[0], [elm[1], elm[2], elm[3], elm[4]]])
+  data_train.append([np.array(Image.fromarray(elm[0]).rotate(90)), [elm[2], 1-elm[3], elm[4], 1-elm[1]]])
+  
+  data_train.append([np.flip(elm[0],0), [elm[1], 1-elm[4], elm[3], 1-elm[2]]])
+  data_train.append([np.array(Image.fromarray(np.flip(elm[0],0)).rotate(90)), [1-elm[4], 1-elm[3], 1-elm[2], 1-elm[1]]])
+  
+  data_train.append([np.flip(np.flip(elm[0],1),0), [1-elm[3], 1-elm[4], 1-elm[1], 1-elm[2]]])
+  data_train.append([np.array(Image.fromarray(np.flip(np.flip(elm[0],1),0)).rotate(90)), [1-elm[4], elm[1], 1-elm[2], elm[3]]])
+  
+  data_train.append([np.flip(elm[0],1), [1-elm[3], elm[2], 1-elm[1], elm[4]]])
+  data_train.append([np.array(Image.fromarray(np.flip(elm[0],1)).rotate(90)), [elm[2], elm[1], elm[4], elm[3]]])
+  
   """for x in range(-rotation, rotation, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
@@ -69,8 +101,18 @@ data_test = []
 for elm in data[int(len(data)*split):]:
   img1 = Image.fromarray(elm[0])
   img2 = Image.fromarray(np.flip(elm[0],1))
-  data_test.append([np.flip(elm[0],1), [1-elm[3], elm[2], 1-elm[1], elm[4]]])
+  
   data_test.append([elm[0], [elm[1], elm[2], elm[3], elm[4]]])
+  data_test.append([np.array(Image.fromarray(elm[0]).rotate(90)), [elm[2], 1-elm[3], elm[4], 1-elm[1]]])
+  
+  data_test.append([np.flip(elm[0],0), [elm[1], 1-elm[4], elm[3], 1-elm[2]]])
+  data_test.append([np.array(Image.fromarray(np.flip(elm[0],0)).rotate(90)), [1-elm[4], 1-elm[3], 1-elm[2], 1-elm[1]]])
+  
+  data_test.append([np.flip(np.flip(elm[0],1),0), [1-elm[3], 1-elm[4], 1-elm[1], 1-elm[2]]])
+  data_test.append([np.array(Image.fromarray(np.flip(np.flip(elm[0],1),0)).rotate(90)), [1-elm[4], elm[1], 1-elm[2], elm[3]]])
+  
+  data_test.append([np.flip(elm[0],1), [1-elm[3], elm[2], 1-elm[1], elm[4]]])
+  data_test.append([np.array(Image.fromarray(np.flip(elm[0],1)).rotate(90)), [elm[2], elm[1], elm[4], elm[3]]])
   """for x in range(-rotation, rotation, pasRotation):
     img1a = img1.rotate(x)
     img2a = img2.rotate(x)
@@ -83,7 +125,6 @@ random.shuffle(data_train)
 
 for elm in data_train:
   X_train.append(elm[0])
-  print(elm[1])
   y_train.append(elm[1])
 data_train = 0
 

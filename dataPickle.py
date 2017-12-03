@@ -10,37 +10,37 @@ from PIL import Image
 
 #pourcentage d'exemples pour train le modèle
 #pourcentage pour le test 1 - split
-split = 0.9
-nbClass = 10
-pasRotation = 4 #pas de la rotation de l'image en degrée
+split = 0.90
+nbClass = 15
+pasRotation = 5 #pas de la rotation de l'image en degrée
 rotation = 30
 imgSize = 64
 
 #Afin de récupérer l'ensemble des noms des images stockées 
 liste = glob.glob('./image/*.png')
-listeFermee = glob.glob('./image/1/**')
+"""listeFermee = glob.glob('./image/1/**')
 listeOuvert = glob.glob('./image/2/**')
 
 listeFermee2 = glob.glob('./image/Triesch_Dataset/1/**')
 listeOuvert2 = glob.glob('./image/Triesch_Dataset/2/**')
 
 listeFermee3 = glob.glob('./image/1_Marcel/**')
-listeOuvert3 = glob.glob('./image/2_Marcel/**')
+listeOuvert3 = glob.glob('./image/2_Marcel/**')"""
 
 #Chargement en RAM des images trouvées
 data = []
 for elm in liste:
   #imread avec 0 pour ouvrir en gray scale et 1 pour ouvrir en couleur
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  img = cv2.equalizeHist(img)
+  #img = cv2.equalizeHist(img)
   """cv2.imshow('object detection', img)
   if cv2.waitKey(25) & 0xFF == ord('q'):
       cv2.destroyAllWindows()
       break"""
-  value = int(elm.split('\\')[1][:1])
+  value = int(elm.split('\\')[1].split('_')[0])
   data.append([img,value])
 
-
+"""
 for elm in listeFermee:
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
   value = 1
@@ -76,9 +76,9 @@ for elm in listeOuvert3:
   value = 2
   img = cv2.equalizeHist(img)
   data.append([img,value])
-random.shuffle(data)
+random.shuffle(data)"""
 
-
+print('Chargement en RAM des images done ...')
 #Traitement des images pour l'entrainement du modèle
 X_train = []
 y_train = []
@@ -96,7 +96,7 @@ for elm in data[:int(len(data)*split)]:
     data_train.append([np.array(img1a), classe])
     data_train.append([np.array(img2a), classe])
 
-
+print('Traitement data_train done ...')
 #Traitement des images pour le test du modèle
 X_test = []
 y_test = []
@@ -114,6 +114,7 @@ for elm in data[int(len(data)*split):]:
     data_test.append([np.array(img1a), classe])
     data_test.append([np.array(img2a), classe])
 
+print('Traitement data_test done ...')
 data = 0
 random.shuffle(data_test)
 random.shuffle(data_train)
@@ -138,7 +139,7 @@ data_test = 0
 
 X_train, y_train, X_test, y_test = np.array(X_train), np.array(y_train), np.array(X_test), np.array(y_test)
 XClassTest, YClassTest = np.array(XClassTest), np.array(YClassTest)
-
+print('Ready to dump')
 
 save_dir = './dataTrain/'
 if not os.path.exists(save_dir):
