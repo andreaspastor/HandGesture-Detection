@@ -12,7 +12,7 @@ from PIL import Image
 #pourcentage pour le test 1 - split
 split = 0.90
 nbClass = 15
-pasRotation = 5 #pas de la rotation de l'image en degrée
+pasRotation = 6 #pas de la rotation de l'image en degrée
 rotation = 30
 imgSize = 64
 
@@ -29,6 +29,7 @@ listeOuvert3 = glob.glob('./image/2_Marcel/**')"""
 
 #Chargement en RAM des images trouvées
 data = []
+random.shuffle(liste)
 for elm in liste:
   #imread avec 0 pour ouvrir en gray scale et 1 pour ouvrir en couleur
   img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))

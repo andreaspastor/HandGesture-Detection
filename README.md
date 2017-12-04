@@ -12,4 +12,3 @@ http://homepages.inf.ed.ac.uk/rbf/CVonline/Imagedbase.htm#gesture
 http://www.robots.ox.ac.uk/~vgg/data/hands/
 http://vision.soic.indiana.edu/projects/egohands/
 https://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download
-http://handtracker.mpi-inf.mpg.de/projects/handtracker_iccv2013/dexter1.htm

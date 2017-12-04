@@ -265,7 +265,7 @@ with tf.Session() as sess:
   saver.restore(sess=sess, save_path=save_path)
   for elm in liste[::-10]:
     ret, image_np = cap.read()
-    image_np = cv2.imread(elm)
+    #image_np = cv2.imread(elm)
     cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
     t2 = time.time()
@@ -275,6 +275,6 @@ with tf.Session() as sess:
     print(gestures[result], 1/(time.time() - t), 1/(time.time() - t2))
     
     t = time.time()
-    if cv2.waitKey(50) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
       cv2.destroyAllWindows()
       break

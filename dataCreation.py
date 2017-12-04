@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 from time import time, sleep
+import glob
 
 import sys
 
@@ -30,7 +31,7 @@ cap = VideoCamera()
 
 imgSize = 256
 cameraSize = (800, 600)
-nbClass = 10
+nbClass = 15
 
 # 0 => rien
 # 1 => Poing fermé
@@ -48,13 +49,19 @@ nbClass = 10
 # 13 => rock and roll
 # 14 => rock and roll horizontal
 
+gestures = ['None', 'fist', 'thumb up', 'thumb down', \
+            'stop', 'catch', 'swing', 'phone', 'victory', \
+            'C', 'okay', '2 fingers', '2 fingers horiz', \
+            'rock&roll', 'rock&roll horiz']
+
 def main(x):
 	t = time() + 1
-	cpt = int(sys.argv[1])
+	global maxValue
+	cpt = maxValue
 	pauseState = True
 	print('Pause :', pauseState, 'Press SPACE to start')
 
-	while cpt < int(sys.argv[1]) + int(sys.argv[2]):
+	while cpt <= maxValue + int(sys.argv[1]):
 		image_np = cap.get_frame()
 
 		cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
@@ -77,8 +84,15 @@ save_dir = 'image/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-main(14)
-df()
+
+""" Récupération du dernier index d'image dans le dossier des images """
+liste = glob.glob(save_dir + '*.png')
+maxValue = -1
+for elm in liste:
+	value = int(elm.split('_')[1].split('.')[0])
+	if value > maxValue:
+		maxValue = value
+
 for x in range(nbClass):
-	print('Lancement main :', x)
+	print('Lancement main :', gestures[x])
 	main(x)
