@@ -5,79 +5,75 @@ import numpy as np
 import os
 import pickle
 from PIL import Image
+import sys
+from threading import Thread, RLock
+from time import time
 
+rlock = RLock()
+class OpenImage(Thread):
+    """ Thread for open images. """
+    def __init__(self, listA):
+        global data
+        Thread.__init__(self)
+        self.listA = listA
+        self.img, self.value = None, None
 
+    def run(self):
+        """ Code to execute to open. """
+        i = 0
+        for elm in self.listA:
+            self.img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+            self.value = int(elm.split('\\')[1].split('_')[0])
+            with rlock:
+                data.append([self.img, self.value])
+            i += 1
 
+liste = glob.glob('./image/*.png')
+listeLaouen = glob.glob('./image/*.png')
+
+random.shuffle(liste)
+random.shuffle(listeLaouen)
 #pourcentage d'exemples pour train le modèle
 #pourcentage pour le test 1 - split
 split = 0.90
 nbClass = 15
-pasRotation = 6 #pas de la rotation de l'image en degrée
+pasRotation = 10 #pas de la rotation de l'image en degrée
 rotation = 30
 imgSize = 64
 
-#Afin de récupérer l'ensemble des noms des images stockées 
-liste = glob.glob('./image/*.png')
-"""listeFermee = glob.glob('./image/1/**')
-listeOuvert = glob.glob('./image/2/**')
-
-listeFermee2 = glob.glob('./image/Triesch_Dataset/1/**')
-listeOuvert2 = glob.glob('./image/Triesch_Dataset/2/**')
-
-listeFermee3 = glob.glob('./image/1_Marcel/**')
-listeOuvert3 = glob.glob('./image/2_Marcel/**')"""
-
-#Chargement en RAM des images trouvées
 data = []
-random.shuffle(liste)
-for elm in liste:
-  #imread avec 0 pour ouvrir en gray scale et 1 pour ouvrir en couleur
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  #img = cv2.equalizeHist(img)
-  """cv2.imshow('object detection', img)
-  if cv2.waitKey(25) & 0xFF == ord('q'):
-      cv2.destroyAllWindows()
-      break"""
-  value = int(elm.split('\\')[1].split('_')[0])
-  data.append([img,value])
+#Chargement en RAM des images trouvées
+# Threads Creation
+t1 = time()
+threads = []
 
-"""
-for elm in listeFermee:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 1
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
+nbThread = 20
+size = int(len(liste)/nbThread)
+for x in range(nbThread):
+    threads.append(OpenImage(liste[x*size:(x+1)*size]))
 
-for elm in listeOuvert:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 2
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
+# Lancement des threads
+for thread in threads:
+    thread.start()
 
-for elm in listeFermee2:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 1
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
 
-for elm in listeOuvert2:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 2
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
+# Attend que les threads se terminent
+for thread in threads:
+    thread.join()
 
-for elm in listeFermee3:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 1
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
+size = int(len(listeLaouen)/nbThread)
+for x in range(nbThread):
+    threads.append(OpenImage(listeLaouen[x*size:(x+1)*size]))
 
-for elm in listeOuvert3:
-  img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
-  value = 2
-  img = cv2.equalizeHist(img)
-  data.append([img,value])
-random.shuffle(data)"""
+# Lancement des threads
+for thread in threads:
+    thread.start()
+
+# Attend que les threads se terminent
+for thread in threads:
+    thread.join()
+
+print('len de data', len(data), time() - t1)
 
 print('Chargement en RAM des images done ...')
 #Traitement des images pour l'entrainement du modèle
@@ -138,7 +134,7 @@ for elm in data_test:
   y_test.append(elm[1])
 data_test = 0
 
-X_train, y_train, X_test, y_test = np.array(X_train), np.array(y_train), np.array(X_test), np.array(y_test)
+X_train, y_train, X_test, y_test = np.array(X_train, dtype=np.uint8), np.array(y_train, dtype=np.uint8), np.array(X_test, dtype=np.uint8), np.array(y_test, dtype=np.uint8)
 XClassTest, YClassTest = np.array(XClassTest), np.array(YClassTest)
 print('Ready to dump')
 
@@ -147,13 +143,21 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 
-pickle.dump(X_train, open('./dataTrain/Xtrain.dump', 'wb'))
-pickle.dump(y_train, open('./dataTrain/Ytrain.dump', 'wb'))
-pickle.dump(X_test, open('./dataTrain/Xtest.dump', 'wb'))
-pickle.dump(y_test, open('./dataTrain/Ytest.dump', 'wb'))
 
-pickle.dump(XClassTest, open('./dataTrain/XtestClass.dump', 'wb'))
-pickle.dump(YClassTest, open('./dataTrain/YtestClass.dump', 'wb'))
+np.save('./dataTrain/Xtest.dump', X_test)
+X_test = 0
+np.save('./dataTrain/Ytest.dump', y_test)
+y_test = 0
+
+np.save('./dataTrain/XtestClass.dump', XClassTest)
+XClassTest = 0
+np.save('./dataTrain/YtestClass.dump', YClassTest)
+YClassTest = 0
+
+np.save('./dataTrain/Ytrain.dump', y_train)
+y_train = 0
+np.save('./dataTrain/Xtrain.dump', X_train)
+X_train = 0
 
 
 print("Nombres exemples d'entrainement", len(X_train))

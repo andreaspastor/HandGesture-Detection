@@ -9,12 +9,12 @@ import pickle
 import sys
 
 def recup(folder):
-  X_train = pickle.load(open('./'+ folder + '/Xtrain.dump', 'rb'))
-  X_test = pickle.load(open('./'+ folder + '/Xtest.dump', 'rb'))
-  y_test = pickle.load(open('./'+ folder + '/Ytest.dump', 'rb'))
-  y_train = pickle.load(open('./'+ folder + '/Ytrain.dump', 'rb'))
-  X_testClass = pickle.load(open('./'+ folder + '/XtestClass.dump', 'rb'))
-  y_testClass = pickle.load(open('./'+ folder + '/YtestClass.dump', 'rb'))
+  X_train = np.load('./'+ folder + '/Xtrain.dump')
+  X_test = np.load('./'+ folder + '/Xtest.dump')
+  y_test = np.load('./'+ folder + '/Ytest.dump')
+  y_train = np.load('./'+ folder + '/Ytrain.dump')
+  X_testClass = np.load('./'+ folder + '/XtestClass.dump')
+  y_testClass = np.load('./'+ folder + '/YtestClass.dump')
   return X_train, y_train, X_test, y_test, X_testClass, y_testClass
 
 def new_weights_conv(name,shape):
