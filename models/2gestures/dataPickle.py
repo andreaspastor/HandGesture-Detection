@@ -22,21 +22,21 @@ class OpenImage(Thread):
         """ Code to execute to open. """
         i = 0
         for elm in self.listA:
-            self.img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
             self.value = int(elm.split('\\')[1].split('_')[0])
-            with rlock:
-                data.append([self.img, self.value])
-            i += 1
+            if self.value in [0,1,2]:
+              self.img = np.array(cv2.resize(cv2.imread(elm, 0), (imgSize,imgSize)))
+              with rlock:
+                  data.append([self.img, self.value])
 
-liste = glob.glob('./image/*.png')
-listeLaouen = glob.glob('./image/laouen/*.png')
+liste = glob.glob('../../image/*.png')
+listeLaouen = glob.glob('../../image/laouen/*.png')
 
 random.shuffle(liste)
 random.shuffle(listeLaouen)
 #pourcentage d'exemples pour train le modèle
 #pourcentage pour le test 1 - split
 split = 0.90
-nbClass = 15
+nbClass = 3
 pasRotation = 10 #pas de la rotation de l'image en degrée
 rotation = 30
 imgSize = 64

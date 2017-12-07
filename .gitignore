@@ -4,13 +4,15 @@ image/
 # Training data
 dataTrain/
 dataTrain_box/
+models/2gestures/dataTrain/
 
 # Final model
 final_model/
 final_model16/
 final_model_10_16/
 final_model_15_16/
-final_model_box
+final_model_box/
+models/2gestures/final_model/
 
 #Solution build
 build/
