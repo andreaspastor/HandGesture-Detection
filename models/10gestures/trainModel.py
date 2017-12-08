@@ -91,12 +91,12 @@ print(y_train[0])
 input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 3
-num_filters1 = 32
+num_filters1 = 48
 num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 3
+n_classes = 11
 batch_size = 256
 imgSize = 64
 
@@ -171,7 +171,7 @@ print(layer_f)
 rate = tf.placeholder(tf.float32, shape=[])
 
 l_rate = 0.0003#5e-4
-drop_rate = 0.60
+drop_rate = 0.75
 beta = 0.001
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))

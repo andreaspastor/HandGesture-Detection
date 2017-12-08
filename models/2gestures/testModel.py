@@ -171,9 +171,12 @@ with tf.Session() as sess:
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
     t2 = time.time()
     gray_image = cv2.equalizeHist(gray_image)
-    result = np.argmax(y_pred.eval({x:[gray_image], keep_prob: 1}))
+    result = y_pred.eval({x:[gray_image], keep_prob: 1})
 
-    print(gestures[result], 1/(time.time() - t), 1/(time.time() - t2))
+    if np.max(result) > 0.8:
+      print(gestures[np.argmax(result)], 1/(time.time() - t), 1/(time.time() - t2))
+    else:
+      print(1/(time.time() - t), 1/(time.time() - t2))
     
     t = time.time()
     if cv2.waitKey(5) & 0xFF == ord('q'):

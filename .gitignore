@@ -5,6 +5,10 @@ image/
 dataTrain/
 dataTrain_box/
 models/2gestures/dataTrain/
+models/3gestures/dataTrain/
+models/5gestures/dataTrain/
+models/10gestures/dataTrain/
+models/14gestures/dataTrain/
 
 # Final model
 final_model/
@@ -13,6 +17,10 @@ final_model_10_16/
 final_model_15_16/
 final_model_box/
 models/2gestures/final_model/
+models/3gestures/final_model/
+models/5gestures/final_model/
+models/10gestures/final_model/
+models/14gestures/final_model/
 
 #Solution build
 build/
