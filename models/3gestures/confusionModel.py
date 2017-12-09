@@ -6,6 +6,49 @@ import numpy as np
 import os
 import ctypes
 import time
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import itertools
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.4f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+
+def recup(folder):
+  X_test = np.load('./'+ folder + '/Xtest.npy')
+  y_test = np.load('./'+ folder + '/Ytest.npy')
+  return X_test, y_test
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -69,6 +112,15 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
+X_test, y_test = recup('dataTrain')
+print(len(X_test))
+
+
+print(X_test[0])
+print('')
+print(y_test[0])
+
+input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 3
 num_filters1 = 32
@@ -76,7 +128,7 @@ num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 6
+n_classes = 4
 batch_size = 256
 imgSize = 64
 
@@ -157,28 +209,22 @@ if not os.path.exists(save_dir):
 save_path = os.path.join(save_dir, 'best_model')
 
 
-gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', 'catch']
+gestures = ['None', 'fist', 'thumb up', 'thumb down']
 
-cap = cv2.VideoCapture(0)
-t = time.time()
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
-  while True:
-    ret, image_np = cap.read()
+  size_sample = int(len(X_test)/4)
+  y_ = y_pred.eval({x:X_test[:batch_size], keep_prob: 1})
+  for g in range(batch_size,size_sample,batch_size):
+    print(g, ' / ', size_sample)
+    y_ = np.vstack((y_,y_pred.eval({x:X_test[g:g+batch_size], keep_prob: 1})))
 
-    cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
-    gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
-    t2 = time.time()
-    #gray_image = cv2.equalizeHist(gray_image)
-    result = y_pred.eval({x:[gray_image], keep_prob: 1})
 
-    if np.max(result) > 0.8:
-      print(gestures[np.argmax(result)], 1/(time.time() - t), 1/(time.time() - t2))
-    else:
-      print(1/(time.time() - t), 1/(time.time() - t2))
-    
-    t = time.time()
-    if cv2.waitKey(5) & 0xFF == ord('q'):
-      cv2.destroyAllWindows()
-      break
+cnf_matrix = confusion_matrix(np.argmax(y_test[:g+batch_size],1), np.argmax(y_,1))
+plt.figure()
+plot_confusion_matrix(cnf_matrix, normalize=True, classes=gestures,
+                      title='Confusion matrix, without normalization')
+plt.show()
+
+

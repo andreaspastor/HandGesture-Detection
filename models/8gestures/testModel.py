@@ -76,7 +76,7 @@ num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 6
+n_classes = 9
 batch_size = 256
 imgSize = 64
 
@@ -157,7 +157,8 @@ if not os.path.exists(save_dir):
 save_path = os.path.join(save_dir, 'best_model')
 
 
-gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', 'catch']
+gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', 'catch', \
+            'swing', 'phone', 'victory']
 
 cap = cv2.VideoCapture(0)
 t = time.time()
@@ -170,7 +171,7 @@ with tf.Session() as sess:
     cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
     t2 = time.time()
-    #gray_image = cv2.equalizeHist(gray_image)
+    gray_image = cv2.equalizeHist(gray_image)
     result = y_pred.eval({x:[gray_image], keep_prob: 1})
 
     if np.max(result) > 0.8:

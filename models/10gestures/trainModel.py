@@ -213,7 +213,8 @@ with tf.Session() as sess:
 
     tempsEcoule = time() - t
 
-    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
+    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
+       + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
     sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
     for no in range(n_classes):
       sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))

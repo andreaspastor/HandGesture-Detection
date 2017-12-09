@@ -171,7 +171,7 @@ print(layer_f)
 rate = tf.placeholder(tf.float32, shape=[])
 
 l_rate = 0.0003#5e-4
-drop_rate = 0.7
+drop_rate = 0.60
 beta = 0.001
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))
@@ -193,7 +193,7 @@ compteur = 0
 prec = 10e100
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
-  #saver.restore(sess=sess, save_path=save_path)
+  saver.restore(sess=sess, save_path=save_path)
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
   res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
   res, epoch = [0 for x in range(n_classes)], 0
@@ -213,7 +213,8 @@ with tf.Session() as sess:
 
     tempsEcoule = time() - t
 
-    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
+    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
+       + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
     sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
     for no in range(n_classes):
       sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
