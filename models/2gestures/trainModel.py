@@ -56,7 +56,7 @@ def new_conv_layer(name,input,              # The previous layer.
                                strides=[1, 2, 2, 1],
                                padding='SAME')
     layer = tf.nn.relu(layer)
-    layer_drop = tf.nn.dropout(layer, dropout)
+    layer_drop = tf.nn.dropout(layer, dropout, name=name+'_dropout')
     return layer_drop, weights
   
 def flatten_layer(layer):
@@ -100,10 +100,10 @@ n_classes = 3
 batch_size = 256
 imgSize = 64
 
-keep_prob = tf.placeholder(tf.float32, shape=[])
-x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
-x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])
-y = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32, shape=[], name='dropRate')
+x = tf.placeholder(tf.float32, [None, imgSize, imgSize], name='input_x')
+x_image = tf.reshape(x, [-1, imgSize, imgSize, 1], name='input_x_image')
+y = tf.placeholder(tf.float32, name='y')
 
 layer_conv1a, weights_conv1a = \
     new_conv_layer("conv1a",input=x_image,
@@ -165,6 +165,7 @@ y_pred_cls = tf.argmax(y_pred, dimension=1)
 get_test = tf.argmax(y_test,dimension=1)
 
 print(layer_conv1a)
+print(layer_conv1c1)
 print(layer_flat)
 print(layer_f)
 
@@ -194,6 +195,8 @@ prec = 10e100
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
+  saver.save(sess=sess, save_path=save_path)
+  df()
   res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
   res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
   res, epoch = [0 for x in range(n_classes)], 0

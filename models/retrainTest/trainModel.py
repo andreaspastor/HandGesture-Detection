@@ -56,7 +56,7 @@ def new_conv_layer(name,input,              # The previous layer.
                                strides=[1, 2, 2, 1],
                                padding='SAME')
     layer = tf.nn.relu(layer)
-    layer_drop = tf.nn.dropout(layer, dropout, name=name+'_dropout')
+    layer_drop = tf.nn.dropout(layer, dropout)
     return layer_drop, weights
   
 def flatten_layer(layer):
@@ -89,6 +89,37 @@ print('')
 print(y_train[0])
 
 input("recuperation done")
+
+# Load the VGG-16 model in the default graph
+g_saver = tf.train.import_meta_graph('./final_model/best_model.meta')
+# Access the graph
+g_graph = tf.get_default_graph()
+for op in tf.get_default_graph().get_operations():
+    print(op.values())
+print(g_graph)
+
+# Retrieve VGG inputs
+x = g_graph.get_tensor_by_name('input_x:0')
+keep_prob = g_graph.get_tensor_by_name('dropRate:0')
+# Choose which node you want to connect your own graph
+output_conv = g_graph.get_tensor_by_name('conv1c1_dropout/mul:0')
+conv_grad = g_graph.get_tensor_by_name('conv1c_dropout/mul:0')
+# output_conv =vgg_graph.get_tensor_by_name('conv2_2:0')
+# output_conv =vgg_graph.get_tensor_by_name('conv3_3:0')
+# output_conv =vgg_graph.get_tensor_by_name('conv4_3:0')
+# output_conv =vgg_graph.get_tensor_by_name('conv5_3:0')
+
+# Stop the gradient for fine-tuning
+# You can also see this as using the VGG model as a feature extractor only
+output_conv_sg = tf.stop_gradient(conv_grad) # It's an identity function
+
+# Build further operations
+"""output_conv_shape = output_conv_sg.get_shape().as_list()
+W1 = tf.get_variable('W1', shape=[1, 1, output_conv_shape[3], 32], initializer=tf.random_normal_initializer(stddev=1e-1))
+b1 = tf.get_variable('b1', shape=[32], initializer=tf.constant_initializer(0.1))
+z1 = tf.nn.conv2d(output_conv_sg, W1, strides=[1, 1, 1, 1], padding='SAME') + b1
+a = tf.nn.relu(z1)"""
+
 # Convolutional Layer 1.
 filter_size1 = 3
 num_filters1 = 32
@@ -96,16 +127,16 @@ num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 9
-batch_size = 196
+n_classes = 11
+batch_size = 256
 imgSize = 64
 
-keep_prob = tf.placeholder(tf.float32, shape=[], name='dropRate')
-x = tf.placeholder(tf.float32, [None, imgSize, imgSize], name='input_x')
-x_image = tf.reshape(x, [-1, imgSize, imgSize, 1], name='input_x_image')
+
+"""x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
+x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])"""
 y = tf.placeholder(tf.float32)
 
-layer_conv1a, weights_conv1a = \
+"""layer_conv1a, weights_conv1a = \
     new_conv_layer("conv1a",input=x_image,
                    num_input_channels=1,
                    filter_size=filter_size1,
@@ -125,35 +156,35 @@ layer_conv1b, weights_conv1b = \
     new_conv_layer("conv1b",input=layer_conv1a1,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1b1, weights_conv1b1 = \
     new_conv_layer("conv1b1",input=layer_conv1b,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
     new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1c1, weights_conv1c1 = \
     new_conv_layer("conv1c1",input=layer_conv1c,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
-                   use_pooling=True)
+                   use_pooling=True)"""
 
-layer_flat, num_features = flatten_layer(layer_conv1c1)
+layer_flat, num_features = flatten_layer(output_conv_sg)
 
 layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_inputs=num_features,
@@ -162,17 +193,16 @@ layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
 
 y_pred = tf.nn.softmax(layer_f)
 y_pred_cls = tf.argmax(y_pred, dimension=1)
-get_test = tf.argmax(y_test,dimension=1)
 
-print(layer_conv1a)
+print(output_conv)
 print(layer_flat)
 print(layer_f)
 
 rate = tf.placeholder(tf.float32, shape=[])
 
-l_rate = 0.0003#5e-4
-drop_rate = 0.65
-beta = 0.001
+l_rate = 0.001#5e-4
+drop_rate = 1
+beta = 0.00
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))
 
@@ -182,7 +212,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_model/'
+save_dir = 'final_model_new/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -201,10 +231,10 @@ with tf.Session() as sess:
     print(no)
     res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
       
-  while epoch < hm_epochs:
+  while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
     epoch_loss = 0
     epoch += 1
-    for g in range(0,len(X_train),batch_size):
+    for g in range(0,int(len(X_train)/3)*3,batch_size):
       _, c = sess.run([optimizer, cost], feed_dict={keep_prob: 1, rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
       
       sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
@@ -213,7 +243,8 @@ with tf.Session() as sess:
 
     tempsEcoule = time() - t
 
-    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
+    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
+       + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
     sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
     for no in range(n_classes):
       sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))

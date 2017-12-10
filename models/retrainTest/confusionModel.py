@@ -4,18 +4,51 @@ import cv2
 import random
 import numpy as np
 import os
-from time import time
-import pickle
-import sys
+import ctypes
+import time
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import itertools
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.4f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
 
 def recup(folder):
-  X_train = np.load('./'+ folder + '/Xtrain.npy')
   X_test = np.load('./'+ folder + '/Xtest.npy')
   y_test = np.load('./'+ folder + '/Ytest.npy')
-  y_train = np.load('./'+ folder + '/Ytrain.npy')
-  X_testClass = np.load('./'+ folder + '/XtestClass.npy')
-  y_testClass = np.load('./'+ folder + '/YtestClass.npy')
-  return X_train, y_train, X_test, y_test, X_testClass, y_testClass
+  return X_test, y_test
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -30,10 +63,10 @@ def new_biases(length):
 
 def new_conv_layer(name,input,              # The previous layer.
                    num_input_channels, # Num. channels in prev. layer.
-                   filter_size,    # Width and height of each filter.
-                   num_filters,    # Number of filters.
-                   dropout,	   # Dropout rate
-                   use_pooling=True): # Use 2x2 max-pooling.
+                   filter_size,        # Width and height of each filter.
+                   num_filters,        # Number of filters.
+                   dropout,            # Dropout rate
+                   use_pooling=True):  # Use 2x2 max-pooling.
 
     shape = [filter_size, filter_size, num_input_channels, num_filters]
 
@@ -56,8 +89,7 @@ def new_conv_layer(name,input,              # The previous layer.
                                strides=[1, 2, 2, 1],
                                padding='SAME')
     layer = tf.nn.relu(layer)
-    layer_drop = tf.nn.dropout(layer, dropout, name=name+'_dropout')
-    return layer_drop, weights
+    return layer, weights
   
 def flatten_layer(layer):
     # Get the shape of the input layer.
@@ -80,13 +112,13 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_train, y_train, X_test, y_test, X_testClass, y_testClass = recup('dataTrain')
-print(len(X_train), len(X_test))
+X_test, y_test = recup('dataTrain')
+print(len(X_test))
 
 
-print(X_train[0])
+print(X_test[0])
 print('')
-print(y_train[0])
+print(y_test[0])
 
 input("recuperation done")
 # Convolutional Layer 1.
@@ -96,14 +128,14 @@ num_filters2 = 64
 num_filters3 = 128
 
 
-n_classes = 9
-batch_size = 196
+n_classes = 4
+batch_size = 256
 imgSize = 64
 
-keep_prob = tf.placeholder(tf.float32, shape=[], name='dropRate')
-x = tf.placeholder(tf.float32, [None, imgSize, imgSize], name='input_x')
-x_image = tf.reshape(x, [-1, imgSize, imgSize, 1], name='input_x_image')
+x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
+x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])
 y = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32)
 
 layer_conv1a, weights_conv1a = \
     new_conv_layer("conv1a",input=x_image,
@@ -125,31 +157,31 @@ layer_conv1b, weights_conv1b = \
     new_conv_layer("conv1b",input=layer_conv1a1,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1b1, weights_conv1b1 = \
     new_conv_layer("conv1b1",input=layer_conv1b,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
     new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1c1, weights_conv1c1 = \
     new_conv_layer("conv1c1",input=layer_conv1c,
-                   num_input_channels=num_filters2,
+                   num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters2,
+                   num_filters=num_filters1,
                    dropout=keep_prob,
                    use_pooling=True)
 
@@ -162,21 +194,10 @@ layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
 
 y_pred = tf.nn.softmax(layer_f)
 y_pred_cls = tf.argmax(y_pred, dimension=1)
-get_test = tf.argmax(y_test,dimension=1)
 
 print(layer_conv1a)
 print(layer_flat)
 print(layer_f)
-
-rate = tf.placeholder(tf.float32, shape=[])
-
-l_rate = 0.0003#5e-4
-drop_rate = 0.65
-beta = 0.001
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
-     + beta * (tf.nn.l2_loss(weights_f))
-
-optimizer = tf.train.AdamOptimizer(rate).minimize(cost)
 
 correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
@@ -187,59 +208,23 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
 
-hm_epochs = 150
-t = time()
-compteur = 0
-prec = 10e100
+
+gestures = ['None', 'fist', 'thumb up', 'thumb down']
+
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
-  res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-  res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
-  res, epoch = [0 for x in range(n_classes)], 0
-  for no in range(n_classes):
-    print(no)
-    res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-      
-  while epoch < hm_epochs:
-    epoch_loss = 0
-    epoch += 1
-    for g in range(0,len(X_train),batch_size):
-      _, c = sess.run([optimizer, cost], feed_dict={keep_prob: 1, rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
-      
-      sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
-      sys.stdout.flush()
-      epoch_loss += c
+  size_sample = int(len(X_test)/4)
+  y_ = y_pred.eval({x:X_test[:batch_size], keep_prob: 1})
+  for g in range(batch_size,size_sample,batch_size):
+    print(g, ' / ', size_sample)
+    y_ = np.vstack((y_,y_pred.eval({x:X_test[g:g+batch_size], keep_prob: 1})))
 
-    tempsEcoule = time() - t
 
-    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) + ' LRate : ' + str(l_rate) + ' Time : ' + str(tempsEcoule))
-    sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
-    for no in range(n_classes):
-      sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
-    sys.stdout.write('\n')
-    t = time()
-    if epoch_loss > prec:
-      compteur += 1
-    else:
-      if compteur > 0:
-        compteur -= 1
-      prec = epoch_loss
-      res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-      res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
-      for no in range(n_classes):
-        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-      saver.save(sess=sess, save_path=save_path)
-    if compteur >= 2:
-      compteur = 0
-      l_rate /= 1.5
-      #batch_size = int(batch_size*1.5)
+cnf_matrix = confusion_matrix(np.argmax(y_test[:g+batch_size],1), np.argmax(y_,1))
+plt.figure()
+plot_confusion_matrix(cnf_matrix, normalize=True, classes=gestures,
+                      title='Confusion matrix, without normalization')
+plt.show()
 
-  res2, res = 0, 0
-  for g in range(0,len(X_train),batch_size):
-      res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
-  res2 /= (g/batch_size) + 1
-  for g in range(0,len(X_test),batch_size):
-      res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
-  res /= (g/batch_size) + 1
-print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)
+
