@@ -91,13 +91,13 @@ print(y_train[0])
 input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 3
-num_filters1 = 48
+num_filters1 = 32
 num_filters2 = 64
 num_filters3 = 128
 
 
 n_classes = 15
-batch_size = 128
+batch_size = 196
 imgSize = 64
 
 keep_prob = tf.placeholder(tf.float32, shape=[])
@@ -125,31 +125,31 @@ layer_conv1b, weights_conv1b = \
     new_conv_layer("conv1b",input=layer_conv1a1,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1b1, weights_conv1b1 = \
     new_conv_layer("conv1b1",input=layer_conv1b,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
     new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1c1, weights_conv1c1 = \
     new_conv_layer("conv1c1",input=layer_conv1c,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
@@ -170,8 +170,8 @@ print(layer_f)
 
 rate = tf.placeholder(tf.float32, shape=[])
 
-l_rate = 0.0001#5e-4
-drop_rate = 0.75
+l_rate = 0.0008#5e-4
+drop_rate = 0.80
 beta = 0.001
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))

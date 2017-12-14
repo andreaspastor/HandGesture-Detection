@@ -71,7 +71,7 @@ def new_fc_layer(name,input,          # The previous layer.
 
 # Convolutional Layer 1.
 filter_size1 = 3
-num_filters1 = 48
+num_filters1 = 32
 num_filters2 = 64
 num_filters3 = 128
 
@@ -105,31 +105,31 @@ layer_conv1b, weights_conv1b = \
     new_conv_layer("conv1b",input=layer_conv1a1,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1b1, weights_conv1b1 = \
     new_conv_layer("conv1b1",input=layer_conv1b,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
     new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1c1, weights_conv1c1 = \
     new_conv_layer("conv1c1",input=layer_conv1c,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
