@@ -5,10 +5,35 @@ import random
 import numpy as np
 import os
 import ctypes
-import time
+from time import time
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import itertools
+
+class VideoCamera(object):
+    def __init__(self, index=0):
+        self.video = cv2.VideoCapture(index)
+        self.index = index
+        print(self.video.isOpened())
+
+    def __del__(self):
+        self.video.release()
+    
+    def get_frame(self, in_grayscale=False):
+        _, frame = self.video.read()
+        if in_grayscale:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame
+
+#info sur le geste à faire
+#recup auto du numero de l'image à ajouter 0_{nb}
+#save in color or in gray
+
+# Open a new thread to manage the external cv2 interaction
+cv2.startWindowThread()
+cap = VideoCamera()
+cameraSize = (800, 600)
+saveSize = 256
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -33,7 +58,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
-    fmt = '.4f' if normalize else 'd'
+    fmt = '.3f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j], fmt),
@@ -112,7 +137,7 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_test, y_test = recup('dataTrain')
+"""X_test, y_test = recup('dataTrain')
 print(len(X_test))
 
 
@@ -120,7 +145,7 @@ print(X_test[0])
 print('')
 print(y_test[0])
 
-input("recuperation done")
+input("recuperation done")"""
 # Convolutional Layer 1.
 filter_size1 = 3
 num_filters1 = 32
@@ -157,31 +182,31 @@ layer_conv1b, weights_conv1b = \
     new_conv_layer("conv1b",input=layer_conv1a1,
                    num_input_channels=num_filters1,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1b1, weights_conv1b1 = \
     new_conv_layer("conv1b1",input=layer_conv1b,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
 layer_conv1c, weights_conv1c = \
     new_conv_layer("conv1c",input=layer_conv1b1,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=False)
 
 layer_conv1c1, weights_conv1c1 = \
     new_conv_layer("conv1c1",input=layer_conv1c,
-                   num_input_channels=num_filters1,
+                   num_input_channels=num_filters2,
                    filter_size=filter_size1,
-                   num_filters=num_filters1,
+                   num_filters=num_filters2,
                    dropout=keep_prob,
                    use_pooling=True)
 
@@ -212,6 +237,57 @@ save_path = os.path.join(save_dir, 'best_model')
 gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', 'catch', \
             'swing', 'phone', 'victory','C', 'okay', '2 fingers', \
             '2 fingers Horiz', 'rock&roll', 'rock&roll Horiz']
+
+
+
+images, labels = [], []
+def main(g):
+  global images, labels, imgSize, saveSize
+  t = time() + 1
+  cpt = 0
+  pauseState = True
+  print('Pause :', pauseState, 'Press SPACE to start')
+
+  while cpt <= 25:
+    image_np = cap.get_frame()
+
+    cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
+    if time() - t > 0.1 and not(pauseState):
+      print('shoot', cpt)
+      color_image = cv2.cv2.resize(image_np, (saveSize,saveSize))
+      name = './image/' + str(g) + '_' + str(cpt) +'.png'
+      cv2.imwrite(name, color_image)
+      images.append(np.array(cv2.resize(cv2.imread(name, 0), (imgSize,imgSize))))
+      classes = np.zeros(n_classes)
+      classes[g] = 1
+      labels.append(classes)
+      t = time()
+      cpt += 1
+
+    key = cv2.waitKey(25) & 0xFF 
+    if key == ord(' '):
+      pauseState = not(pauseState)
+      print('Pause :', pauseState, 'Press SPACE to change state')
+    elif key == ord('q'):
+      cv2.destroyAllWindows()
+      break
+
+save_dir = 'image/'
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+
+
+
+for g in range(n_classes):
+  print('Lancement main :', gestures[g])
+  main(g)
+
+X_test = np.array(images)
+y_test = np.array(labels)
+
+batch_size = int(X_test.shape[0]/4)
+X_test = X_test[:4*batch_size]
+y_test = y_test[:4*batch_size]
 
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
