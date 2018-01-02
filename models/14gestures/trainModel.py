@@ -9,13 +9,25 @@ import pickle
 import sys
 
 def recup(folder):
-  X_train = np.load('./'+ folder + '/Xtrain.npy')
-  X_test = np.load('./'+ folder + '/Xtest.npy')
-  y_test = np.load('./'+ folder + '/Ytest.npy')
-  y_train = np.load('./'+ folder + '/Ytrain.npy')
-  X_testClass = np.load('./'+ folder + '/XtestClass.npy')
-  y_testClass = np.load('./'+ folder + '/YtestClass.npy')
-  return X_train, y_train, X_test, y_test, X_testClass, y_testClass
+	X_train = np.load('./'+ folder + '/Xtrain.npy')
+	X_test = np.load('./'+ folder + '/Xtest.npy')
+	y_test = np.load('./'+ folder + '/Ytest.npy')
+	y_train = np.load('./'+ folder + '/Ytrain.npy')
+	X_testClass = np.load('./'+ folder + '/XtestClass.npy')
+	y_testClass = np.load('./'+ folder + '/YtestClass.npy')
+	return X_train, y_train, X_test, y_test, X_testClass, y_testClass
+
+def recupTest(folder, num):
+	X_test = np.load('./'+ folder + '/Xtest_'+str(num)+'.npy')
+	y_test = np.load('./'+ folder + '/Ytest_'+str(num)+'.npy')
+	X_testClass = np.load('./'+ folder + '/XtestClass_'+str(num)+'.npy')
+	y_testClass = np.load('./'+ folder + '/YtestClass_'+str(num)+'.npy')
+	return X_test, y_test, X_testClass, y_testClass
+
+def recupTrain(folder, num):
+	X_train = np.load('./'+ folder + '/Xtrain_'+str(num)+'.npy')
+	y_train = np.load('./'+ folder + '/Ytrain_'+str(num)+'.npy')
+	return X_train, y_train
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -80,15 +92,9 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_train, y_train, X_test, y_test, X_testClass, y_testClass = recup('dataTrain')
-print(len(X_train), len(X_test))
+X_test, y_test, X_testClass, y_testClass = recupTest('dataTrain',0)
 
 
-print(X_train[0])
-print('')
-print(y_train[0])
-
-input("recuperation done")
 # Convolutional Layer 1.
 filter_size1 = 3
 num_filters1 = 32
@@ -100,10 +106,10 @@ n_classes = 15
 batch_size = 196
 imgSize = 64
 
-keep_prob = tf.placeholder(tf.float32, shape=[])
-x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
-x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])
-y = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32, shape=[], name='dropRate')
+x = tf.placeholder(tf.float32, [None, imgSize, imgSize], name='input_x')
+x_image = tf.reshape(x, [-1, imgSize, imgSize, 1], name='input_x_image')
+y = tf.placeholder(tf.float32, name='labels')
 
 layer_conv1a, weights_conv1a = \
     new_conv_layer("conv1a",input=x_image,
@@ -164,14 +170,13 @@ y_pred = tf.nn.softmax(layer_f)
 y_pred_cls = tf.argmax(y_pred, dimension=1)
 get_test = tf.argmax(y_test,dimension=1)
 
-print(layer_conv1a)
+print(layer_conv1c1)
 print(layer_flat)
 print(layer_f)
-
 rate = tf.placeholder(tf.float32, shape=[])
 
 l_rate = 0.0001#5e-4
-drop_rate = 0.70
+drop_rate = 0.60
 beta = 0.001
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
      + beta * (tf.nn.l2_loss(weights_f))
@@ -192,55 +197,54 @@ t = time()
 compteur = 0
 prec = 10e100
 with tf.Session() as sess:
-  sess.run(tf.global_variables_initializer())
-  saver.restore(sess=sess, save_path=save_path)
-  res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-  res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
-  res, epoch = [0 for x in range(n_classes)], 0
-  for no in range(n_classes):
-    print(no)
-    res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-      
-  while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
-    epoch_loss = 0
-    epoch += 1
-    for g in range(0,len(X_train),batch_size):
-      _, c = sess.run([optimizer, cost], feed_dict={keep_prob: 1, rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
-      
-      sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
-      sys.stdout.flush()
-      epoch_loss += c
+	sess.run(tf.global_variables_initializer())
+	saver.restore(sess=sess, save_path=save_path)
+	res, epoch = [0 for x in range(n_classes)], 0
+	  
+	while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
+		epoch_loss = 0
+		epoch += 1
+		for name in [0,20000,40000]:
+			X_train, y_train = recupTrain('dataTrain', name)
+			for g in range(0,len(X_train),batch_size):
+				_, c = sess.run([optimizer, cost], feed_dict={rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
 
-    tempsEcoule = time() - t
+				sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
+				sys.stdout.flush()
+				epoch_loss += c
 
-    sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
-       + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
-    sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
-    for no in range(n_classes):
-      sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
-    sys.stdout.write('\n')
-    t = time()
-    if epoch_loss > prec:
-      compteur += 1
-    else:
-      if compteur > 0:
-        compteur -= 1
-      prec = epoch_loss
-      res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-      res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
-      for no in range(n_classes):
-        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-      saver.save(sess=sess, save_path=save_path)
-    if compteur >= 2:
-      compteur = 0
-      l_rate /= 1.5
-      #batch_size = int(batch_size*1.5)
+		tempsEcoule = time() - t
 
-  res2, res = 0, 0
-  for g in range(0,len(X_train),batch_size):
-      res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
-  res2 /= (g/batch_size) + 1
-  for g in range(0,len(X_test),batch_size):
-      res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
-  res /= (g/batch_size) + 1
-print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)
+		sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
+		   + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
+		res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
+		res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
+
+		for no in range(n_classes):
+			res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
+		sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
+		for no in range(n_classes):
+			sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
+		sys.stdout.write('\n')
+		t = time()
+
+		if epoch_loss > prec:
+			compteur += 1
+		else:
+			if compteur > 0:
+				compteur -= 1
+			prec = epoch_loss
+			saver.save(sess=sess, save_path=save_path)
+		if compteur >= 2:
+			compteur = 0
+			l_rate /= 1.5
+			#batch_size = int(batch_size*1.5)
+
+	res2, res = 0, 0
+	for g in range(0,len(X_train),batch_size):
+	  res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
+	res2 /= (g/batch_size) + 1
+	for g in range(0,len(X_test),batch_size):
+	  res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
+	res /= (g/batch_size) + 1
+	print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)
