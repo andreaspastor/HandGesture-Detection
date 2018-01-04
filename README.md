@@ -6,6 +6,12 @@ Python
 Tensorflow
 OpenCV
 
+# How to use this code :
+
+First add your own images in the image folder or use dataCreation.py to create your own
+After transform these images in training example with dataDump.py
+Now, train a model with trainModel.py
+
 Databases to explore:
 http://sun.aei.polsl.pl/~mkawulok/gestures/
 http://homepages.inf.ed.ac.uk/rbf/CVonline/Imagedbase.htm#gesture

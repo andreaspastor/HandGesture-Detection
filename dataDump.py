@@ -1,3 +1,10 @@
+
+""" Script to transform images saved into training examples.
+	All images are open and resize to a same size.
+	After some copy are made to create even more examples from differentes rotations of the original image
+
+"""
+
 import glob
 import cv2
 import random
@@ -9,10 +16,15 @@ import sys
 from threading import Thread, RLock
 from time import time
 
+
+#Creation of a lock
 rlock = RLock()
+
+#Storage of training examples and size of these images
 data = []
 imgSize = 64
 
+#Class to open in thread all the images store on the disk
 class OpenImage(Thread):
     """ Thread for open images. """
     def __init__(self, listA):
@@ -33,8 +45,8 @@ class OpenImage(Thread):
 
 def recup(liste):
 	global data
-	#Chargement en RAM des images trouvées
-	# Threads Creation
+	#Load in RAM of all images on the disk
+	# Threads creation
 	threads = []
 
 	nbThread = 20
@@ -42,12 +54,12 @@ def recup(liste):
 	for x in range(nbThread):
 	    threads.append(OpenImage(liste[x*size:(x+1)*size]))
 
-	# Lancement des threads
+	# Run of all threads
 	for thread in threads:
 	    thread.start()
 
 
-	# Attend que les threads se terminent
+	# Waiting for all threads
 	for thread in threads:
 	    thread.join()
 
@@ -56,12 +68,12 @@ def recup(liste):
 
 def dataTraitement():
 	global data
-	pasRotation = 10 #pas de la rotation de l'image en degrée
-	rotation = 30
-	split = 0.90
-	nbClass = 15
-	print('Chargement en RAM des images done ...')
-	#Traitement des images pour l'entrainement du modèle
+	rotationStep = 10 #rotation step in degree
+	rotation = 30 #max rotation
+	split = 0.90 #porcentage of split set
+	nbClass = 15 #14 gestures
+	print('Load in memory done ...')
+	#Traitement of images flip, rotation, ... for training
 	X_train = []
 	y_train = []
 	data_train = []
@@ -72,14 +84,14 @@ def dataTraitement():
 	  img2 = Image.fromarray(np.flip(elm[0],1))
 	  data_train.append([np.flip(elm[0],1), classe])
 	  data_train.append([elm[0], classe])
-	  for x in range(-rotation, rotation, pasRotation):
+	  for x in range(-rotation, rotation, rotationStep):
 	    img1a = img1.rotate(x)
 	    img2a = img2.rotate(x)
 	    data_train.append([np.array(img1a), classe])
 	    data_train.append([np.array(img2a), classe])
 
 	print('Traitement data_train done ...')
-	#Traitement des images pour le test du modèle
+	#Traitement of images flip, rotation, ... for testing
 	X_test = []
 	y_test = []
 	data_test = []
@@ -90,7 +102,7 @@ def dataTraitement():
 	  img2 = Image.fromarray(np.flip(elm[0],1))
 	  data_test.append([np.flip(elm[0],1), classe])
 	  data_test.append([elm[0], classe])
-	  for x in range(-rotation, rotation, pasRotation):
+	  for x in range(-rotation, rotation, rotationStep):
 	    img1a = img1.rotate(x)
 	    img2a = img2.rotate(x)
 	    data_test.append([np.array(img1a), classe])
@@ -133,14 +145,18 @@ liste = liste + listeLaouen
 
 random.shuffle(liste)
 
-print(len(liste), 'images à traiter !')
+print(len(liste), 'images to load !')
+
+""" Prevent memory error images a load in batches of 20000 images and after save
+	At the end there is 3-4 files of 1.5 Go each
+"""
+
 batch_size = 20000
 for x in range(0,len(liste),batch_size):
 	recup(liste[x:x+batch_size])
 	print(x,len(data))
 
 	random.shuffle(data)
-	print('Chargement en RAM des images done ...')
 
 	X_train, X_test, XClassTest, y_train, y_test, YClassTest = dataTraitement()
 
@@ -151,8 +167,8 @@ for x in range(0,len(liste),batch_size):
 	    os.makedirs(save_dir)
 
 
-	print("Nombres exemples d'entrainement", len(X_train))
-	print("Nombres exemples de test", len(X_test))
+	print("Number of images for training part :", len(X_train))
+	print("Number of images for testing part :", len(X_test))
 
 	np.save('./dataTrain/Ytest_'+str(x), y_test)
 	y_test = 0

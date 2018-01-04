@@ -1,3 +1,8 @@
+
+""" Script to save examples of gestures in a folder to train a model after.
+	This script open a thread on a webcam to take picture of gestures made by a person.
+	All this pictures are resize to be store and use after in the training part. """
+
 import cv2
 import numpy as np
 import os
@@ -5,6 +10,11 @@ from time import time, sleep
 import glob
 
 import sys
+
+if len(sys.argv) < 2:
+	print("You forget to give a number of pictures to take (25 by default)")
+	sys.argv.append("25")
+
 
 class VideoCamera(object):
     def __init__(self, index=0):
@@ -21,42 +31,43 @@ class VideoCamera(object):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return frame
 
-#info sur le geste à faire
-#recup auto du numero de l'image à ajouter 0_{nb}
-#save in color or in gray
-
 # Open a new thread to manage the external cv2 interaction
 cv2.startWindowThread()
 cap = VideoCamera()
 
+#Size of saved images, camera, and numbers of gestures
 imgSize = 256
 cameraSize = (800, 600)
-nbClass = 15
-
-# 0 => rien
-# 1 => Poing fermé
-# 2 => pouce haut
-# 3 => pouce bas
-# 4 => main ouverte doigts serrés
-# 5 => main ouverte doigts ecartés
-# 6 => pouce + auriculaire horizontal
-# 7 => pouce + auriculaire vertical
-# 8 => victoire
-# 9 => C
-# 10 => ok
-# 11 => victoire serré
-# 12 => victoire serré horizontal
-# 13 => rock and roll
-# 14 => rock and roll horizontal
 
 gestures = ['None', 'fist', 'thumb up', 'thumb down', \
             'stop', 'catch', 'swing', 'phone', 'victory', \
             'C', 'okay', '2 fingers', '2 fingers horiz', \
             'rock&roll', 'rock&roll horiz']
+nbClass = len(gestures)
 
-def main(x):
-	t = time() + 1
+# List of all gestures
+# 0 => None
+# 1 => Fist
+# 2 => Thumb Up
+# 3 => Thumb Down
+# 4 => Stop
+# 5 => Catch
+# 6 => Swing
+# 7 => Phone
+# 8 => Victory
+# 9 => C
+# 10 => Okay
+# 11 => 2 fingers
+# 12 => 2 fingers horizontal
+# 13 => rock and roll
+# 14 => rock and roll horizontal
+
+
+#Main function where pictures are taken and saved
+def captureGesture(x):
 	global maxValue
+
+	t = time() + 1
 	cpt = maxValue
 	pauseState = True
 	print('Pause :', pauseState, 'Press SPACE to start')
@@ -66,26 +77,27 @@ def main(x):
 
 		cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
 		if time() - t > 0.1 and not(pauseState):
-			print('shoot', cpt)
+			print('New picture', cpt)
 			gray_image = cv2.resize(image_np, (imgSize,imgSize))
-			cv2.imwrite('./image/' + str(x) + '_' + str(cpt) +'.png', gray_image)
+			#cv2.imwrite('./image/' + str(x) + '_' + str(cpt) +'.png', gray_image)
 			t = time()
 			cpt += 1
 
 		key = cv2.waitKey(25) & 0xFF 
 		if key == ord(' '):
 			pauseState = not(pauseState)
-			print('Pause :', pauseState, 'Press SPACE to change state')
+			print('Pause :', pauseState, 'Press SPACE to change state')	
 		elif key == ord('q'):
 			cv2.destroyAllWindows()
 			break
 
+#Create a save folder if it doesn't exist
 save_dir = 'image/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 
-""" Récupération du dernier index d'image dans le dossier des images """
+#Automatically get the last index of saved images
 liste = glob.glob(save_dir + '*.png')
 maxValue = -1
 for elm in liste:
@@ -93,6 +105,7 @@ for elm in liste:
 	if value > maxValue:
 		maxValue = value
 
+#Now we take images for each gesture
 for x in range(nbClass):
-	print('Lancement main :', gestures[x])
-	main(x)
+	print('Run capture :', gestures[x])
+	captureGesture(x)
