@@ -58,7 +58,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
-    fmt = '.3f' if normalize else 'd'
+    fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j], fmt),
@@ -277,18 +277,27 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 
+def recupTest(folder, num):
+  X_test = np.load('./'+ folder + '/Xtest_'+str(num)+'.npy')
+  y_test = np.load('./'+ folder + '/Ytest_'+str(num)+'.npy')
+  X_testClass = np.load('./'+ folder + '/XtestClass_'+str(num)+'.npy')
+  y_testClass = np.load('./'+ folder + '/YtestClass_'+str(num)+'.npy')
+  return X_test, y_test, X_testClass, y_testClass
 
+"""
 for g in range(n_classes):
   print('Lancement main :', gestures[g])
   main(g)
 
 X_test = np.array(images)
-y_test = np.array(labels)
+y_test = np.array(labels)"""
 
-batch_size = int(X_test.shape[0]/4)
+X_test, y_test, _, _ = recupTest('dataTrain', 0)
+
+"""batch_size = int(X_test.shape[0]/4)
 X_test = X_test[:4*batch_size]
-y_test = y_test[:4*batch_size]
-
+y_test = y_test[:4*batch_size]"""
+batch_size = 256
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)

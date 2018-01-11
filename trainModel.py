@@ -234,7 +234,7 @@ with tf.Session() as sess:
 			if compteur > 0:
 				compteur -= 1
 			prec = epoch_loss
-			saver.save(sess=sess, save_path=save_path)
+			#saver.save(sess=sess, save_path=save_path)
 		if compteur >= 2:
 			compteur = 0
 			l_rate /= 1.5
