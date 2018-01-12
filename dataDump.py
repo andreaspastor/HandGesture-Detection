@@ -15,6 +15,7 @@ from PIL import Image
 import sys
 from threading import Thread, RLock
 from time import time
+from tqdm import tqdm
 
 
 #Creation of a lock
@@ -60,7 +61,7 @@ def recup(liste):
 
 
 	# Waiting for all threads
-	for thread in threads:
+	for thread in tqdm(threads):
 	    thread.join()
 
 	return None
@@ -77,7 +78,7 @@ def dataTraitement():
 	X_train = []
 	y_train = []
 	data_train = []
-	for elm in data[:int(len(data)*split)]:
+	for elm in tqdm(data[:int(len(data)*split)]):
 	  classe = np.zeros(nbClass)
 	  classe[elm[1]] = 1
 	  img1 = Image.fromarray(elm[0])
@@ -95,7 +96,7 @@ def dataTraitement():
 	X_test = []
 	y_test = []
 	data_test = []
-	for elm in data[int(len(data)*split):]:
+	for elm in tqdm(data[int(len(data)*split):]):
 	  classe = np.zeros(nbClass)
 	  classe[elm[1]] = 1
 	  img1 = Image.fromarray(elm[0])
@@ -115,18 +116,17 @@ def dataTraitement():
 
 	XClassTest = [[] for x in range(nbClass)]
 	YClassTest = [[] for y in range(nbClass)]
-	for elm in data_test:
+	for elm in tqdm(data_test):
 	  x = np.argmax(elm[1])
 	  YClassTest[x].append(elm[1])
 	  XClassTest[x].append(elm[0])
 
-
-	for elm in data_train:
+	for elm in tqdm(data_train):
 	  X_train.append(elm[0])
 	  y_train.append(elm[1])
 	data_train = 0
 
-	for elm in data_test:
+	for elm in tqdm(data_test):
 	  X_test.append(elm[0])
 	  y_test.append(elm[1])
 	data_test = 0
@@ -139,9 +139,10 @@ def dataTraitement():
 
 
 
-liste = glob.glob('../../image/*.png')
-listeLaouen = glob.glob('../../image/laouen/*.png')
-liste = liste + listeLaouen
+liste = glob.glob('./image/*.png')
+listeLaouen = glob.glob('./image/laouen/*.png')
+listeRefine = glob.glob('./imageNew/*.png')
+liste = liste + listeLaouen + listeRefine
 
 random.shuffle(liste)
 
@@ -151,7 +152,7 @@ print(len(liste), 'images to load !')
 	At the end there is 3-4 files of 1.5 Go each
 """
 
-batch_size = 20000
+batch_size = 26000
 for x in range(0,len(liste),batch_size):
 	recup(liste[x:x+batch_size])
 	print(x,len(data))
@@ -162,7 +163,7 @@ for x in range(0,len(liste),batch_size):
 
 	print('Ready to dump')
 
-	save_dir = './dataTrain/'
+	save_dir = './dataTrainRefine/'
 	if not os.path.exists(save_dir):
 	    os.makedirs(save_dir)
 
@@ -170,18 +171,18 @@ for x in range(0,len(liste),batch_size):
 	print("Number of images for training part :", len(X_train))
 	print("Number of images for testing part :", len(X_test))
 
-	np.save('./dataTrain/Ytest_'+str(x), y_test)
+	np.save(save_dir + 'Ytest_'+str(x), y_test)
 	y_test = 0
-	np.save('./dataTrain/Ytrain_'+str(x), y_train)
+	np.save(save_dir + 'Ytrain_'+str(x), y_train)
 	y_train = 0
-	np.save('./dataTrain/YtestClass_'+str(x), YClassTest)
+	np.save(save_dir + 'YtestClass_'+str(x), YClassTest)
 	YClassTest = 0
 
-	np.save('./dataTrain/XtestClass_'+str(x), XClassTest)
+	np.save(save_dir + 'XtestClass_'+str(x), XClassTest)
 	XClassTest = 0
-	np.save('./dataTrain/Xtest_'+str(x), X_test)
+	np.save(save_dir + 'Xtest_'+str(x), X_test)
 	X_test = 0
-	np.save('./dataTrain/Xtrain_'+str(x), X_train)
+	np.save(save_dir + 'Xtrain_'+str(x), X_train)
 	X_train = 0
 
 

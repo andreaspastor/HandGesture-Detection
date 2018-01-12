@@ -1,33 +1,15 @@
-import tensorflow as tf
-import glob
+
+""" Script to save examples of gestures in a folder to train a model after.
+	This script open a thread on a webcam to take picture of gestures made by a person.
+	All this pictures are resize to be store and use after in the training part. """
+
 import cv2
-import random
 import numpy as np
 import os
-from time import time
-import pickle
+from time import time, sleep
+import glob
+import tensorflow as tf
 import sys
-
-def recup(folder):
-	X_train = np.load('./'+ folder + '/Xtrain.npy')
-	X_test = np.load('./'+ folder + '/Xtest.npy')
-	y_test = np.load('./'+ folder + '/Ytest.npy')
-	y_train = np.load('./'+ folder + '/Ytrain.npy')
-	X_testClass = np.load('./'+ folder + '/XtestClass.npy')
-	y_testClass = np.load('./'+ folder + '/YtestClass.npy')
-	return X_train, y_train, X_test, y_test, X_testClass, y_testClass
-
-def recupTest(folder, num):
-	X_test = np.load('./'+ folder + '/Xtest_'+str(num)+'.npy')
-	y_test = np.load('./'+ folder + '/Ytest_'+str(num)+'.npy')
-	X_testClass = np.load('./'+ folder + '/XtestClass_'+str(num)+'.npy')
-	y_testClass = np.load('./'+ folder + '/YtestClass_'+str(num)+'.npy')
-	return X_test, y_test, X_testClass, y_testClass
-
-def recupTrain(folder, num):
-	X_train = np.load('./'+ folder + '/Xtrain_'+str(num)+'.npy')
-	y_train = np.load('./'+ folder + '/Ytrain_'+str(num)+'.npy')
-	return X_train, y_train
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -42,10 +24,10 @@ def new_biases(length):
 
 def new_conv_layer(name,input,              # The previous layer.
                    num_input_channels, # Num. channels in prev. layer.
-                   filter_size,    # Width and height of each filter.
-                   num_filters,    # Number of filters.
-                   dropout,	   # Dropout rate
-                   use_pooling=True): # Use 2x2 max-pooling.
+                   filter_size,        # Width and height of each filter.
+                   num_filters,        # Number of filters.
+                   dropout,            # Dropout rate
+                   use_pooling=True):  # Use 2x2 max-pooling.
 
     shape = [filter_size, filter_size, num_input_channels, num_filters]
 
@@ -68,8 +50,7 @@ def new_conv_layer(name,input,              # The previous layer.
                                strides=[1, 2, 2, 1],
                                padding='SAME')
     layer = tf.nn.relu(layer)
-    layer_drop = tf.nn.dropout(layer, dropout)
-    return layer_drop, weights
+    return layer, weights
   
 def flatten_layer(layer):
     # Get the shape of the input layer.
@@ -92,9 +73,6 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_test, y_test, X_testClass, y_testClass = recupTest('dataTrainRefine',0)
-
-
 # Convolutional Layer 1.
 filter_size1 = 3
 num_filters1 = 32
@@ -103,13 +81,13 @@ num_filters3 = 128
 
 
 n_classes = 15
-batch_size = 196
+batch_size = 256
 imgSize = 64
 
-keep_prob = tf.placeholder(tf.float32, shape=[], name='dropRate')
-x = tf.placeholder(tf.float32, [None, imgSize, imgSize], name='input_x')
-x_image = tf.reshape(x, [-1, imgSize, imgSize, 1], name='input_x_image')
-y = tf.placeholder(tf.float32, name='labels')
+x = tf.placeholder(tf.float32, [None, imgSize, imgSize])
+x_image = tf.reshape(x, [-1, imgSize, imgSize, 1])
+y = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32)
 
 layer_conv1a, weights_conv1a = \
     new_conv_layer("conv1a",input=x_image,
@@ -168,83 +146,124 @@ layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
 
 y_pred = tf.nn.softmax(layer_f)
 y_pred_cls = tf.argmax(y_pred, dimension=1)
-get_test = tf.argmax(y_test,dimension=1)
 
-print(layer_conv1c1)
+print(layer_conv1a)
 print(layer_flat)
 print(layer_f)
-rate = tf.placeholder(tf.float32, shape=[])
-
-l_rate = 0.0001#5e-4
-drop_rate = 0.60
-beta = 0.001
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
-     + beta * (tf.nn.l2_loss(weights_f))
-
-optimizer = tf.train.AdamOptimizer(rate).minimize(cost)
 
 correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_modelRefine/'
+save_dir = 'final_model/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
 
-hm_epochs = 150
-t = time()
-compteur = 0
-prec = 10e100
-with tf.Session() as sess:
-	sess.run(tf.global_variables_initializer())
-	saver.restore(sess=sess, save_path=save_path)
-	res, epoch = [0 for x in range(n_classes)], 0
-	  
-	while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
-		epoch_loss = 0
-		epoch += 1
-		for name in [0,26000]:
-			X_train, y_train = recupTrain('dataTrainRefine', name)
-			for g in range(0,len(X_train),batch_size):
-				_, c = sess.run([optimizer, cost], feed_dict={rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
+if len(sys.argv) < 2:
+	print("You forget to give a number of pictures to take (25 by default)")
+	sys.argv.append("25")
 
-				sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
-				sys.stdout.flush()
-				epoch_loss += c
 
-		tempsEcoule = time() - t
+class VideoCamera(object):
+    def __init__(self, index=0):
+        self.video = cv2.VideoCapture(index)
+        self.index = index
+        print(self.video.isOpened())
 
-		sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
-		   + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
-		res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-		res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
+    def __del__(self):
+        self.video.release()
+    
+    def get_frame(self, in_grayscale=False):
+        _, frame = self.video.read()
+        if in_grayscale:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return frame
 
-		for no in range(n_classes):
-			res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-		sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
-		for no in range(n_classes):
-			sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
-		sys.stdout.write('\n')
-		t = time()
+# Open a new thread to manage the external cv2 interaction
+cv2.startWindowThread()
+cap = VideoCamera()
 
-		if epoch_loss > prec:
-			compteur += 1
-		else:
-			if compteur > 0:
-				compteur -= 1
-			prec = epoch_loss
-			#saver.save(sess=sess, save_path=save_path)
-		if compteur >= 2:
-			compteur = 0
-			l_rate /= 1.5
-			#batch_size = int(batch_size*1.5)
+#Size of saved images, camera, and numbers of gestures
+imgSize = 256
+cameraSize = (800, 600)
 
-	res2, res = 0, 0
-	for g in range(0,len(X_train),batch_size):
-	  res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
-	res2 /= (g/batch_size) + 1
-	for g in range(0,len(X_test),batch_size):
-	  res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
-	res /= (g/batch_size) + 1
-	print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)
+gestures = ['None', 'fist', 'thumb up', 'thumb down', \
+            'stop', 'catch', 'swing', 'phone', 'victory', \
+            'C', 'okay', '2 fingers', '2 fingers horiz', \
+            'rock&roll', 'rock&roll horiz']
+nbClass = len(gestures)
+
+# List of all gestures
+# 0 => None
+# 1 => Fist
+# 2 => Thumb Up
+# 3 => Thumb Down
+# 4 => Stop
+# 5 => Catch
+# 6 => Swing
+# 7 => Phone
+# 8 => Victory
+# 9 => C
+# 10 => Okay
+# 11 => 2 fingers
+# 12 => 2 fingers horizontal
+# 13 => rock and roll
+# 14 => rock and roll horizontal
+
+
+#Main function where pictures are taken and saved
+def captureGesture(numGestures):
+	global maxValue
+	t = time()
+	with tf.Session() as sess:
+		sess.run(tf.global_variables_initializer())
+		saver.restore(sess=sess, save_path=save_path)
+		cpt = maxValue
+		pauseState = True
+		print('Pause :', pauseState, 'Press SPACE to start')
+
+		while cpt <= maxValue + int(sys.argv[1]):
+			image_np = cap.get_frame()
+
+			cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
+			if time() - t > 0.1 and not(pauseState):
+				save_image = cv2.resize(image_np, (imgSize,imgSize))
+				gray_image = cv2.cvtColor(cv2.resize(image_np, (64,64)), cv2.COLOR_BGR2GRAY)
+				gray_image = cv2.equalizeHist(gray_image)
+				#print(gray_image)
+				result = y_pred.eval({x:[gray_image], keep_prob: 1})
+
+				print(gestures[np.argmax(result)])
+				if np.argmax(result) != numGestures: 
+					print('New picture', cpt)
+					cpt += 1
+					t = time()
+					cv2.imwrite('./imageNew/' + str(numGestures) + '_' + str(cpt) +'.png', save_image)
+
+			key = cv2.waitKey(25) & 0xFF 
+			if key == ord(' '):
+				pauseState = not(pauseState)
+				print('Pause :', pauseState, 'Press SPACE to change state')	
+			elif key == ord('q'):
+				cv2.destroyAllWindows()
+				break
+
+#Create a save folder if it doesn't exist
+save_dir = 'imageNew/'
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+
+
+#Automatically get the last index of saved images
+liste = glob.glob(save_dir + '*.png')
+maxValue = -1
+for elm in liste:
+	value = int(elm.split('_')[1].split('.')[0])
+	if value > maxValue:
+		maxValue = value
+
+#Now we take images for each gesture
+for g in range(nbClass):
+	print('Run capture :', gestures[g])
+	captureGesture(g)

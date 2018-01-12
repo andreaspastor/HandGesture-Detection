@@ -1,15 +1,18 @@
 # Images dataset
 image/
 imageTest/
+imageNew/
 
 #Other models
 otherModels/
 
 # Training data
 dataTrain/
+dataTrainRefine/
 
 # Final model
 final_model/
+final_modelRefine/
 
 # Windows image file caches
 Thumbs.db
