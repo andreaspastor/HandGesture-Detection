@@ -1,15 +1,12 @@
-
-""" Script to save examples of gestures in a folder to train a model after.
-	This script open a thread on a webcam to take picture of gestures made by a person.
-	All this pictures are resize to be store and use after in the training part. """
-
+import tensorflow as tf
+import glob
 import cv2
+import random
 import numpy as np
 import os
-from time import time, sleep
-import glob
-import tensorflow as tf
-import sys
+import ctypes
+import time
+from tqdm import tqdm
 
 def new_weights_conv(name,shape):
     return tf.get_variable(name, shape=shape, dtype=tf.float32,
@@ -160,110 +157,47 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
 
-if len(sys.argv) < 2:
-	print("You forget to give a number of pictures to take (25 by default)")
-	sys.argv.append("25")
 
-
-class VideoCamera(object):
-    def __init__(self, index=0):
-        self.video = cv2.VideoCapture(index)
-        self.index = index
-        print(self.video.isOpened())
-
-    def __del__(self):
-        self.video.release()
-    
-    def get_frame(self, in_grayscale=False):
-        _, frame = self.video.read()
-        if in_grayscale:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        return frame
-
-# Open a new thread to manage the external cv2 interaction
-cv2.startWindowThread()
-cap = VideoCamera()
-
-#Size of saved images, camera, and numbers of gestures
-imgSize = 256
-cameraSize = (800, 600)
-
-gestures = ['None', 'fist', 'thumb up', 'thumb down', \
-            'stop', 'catch', 'swing', 'phone', 'victory', \
+gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', \
+            'catch', 'swing', 'phone', 'victory', \
             'C', 'okay', '2 fingers', '2 fingers horiz', \
             'rock&roll', 'rock&roll horiz']
-nbClass = len(gestures)
 
-# List of all gestures
-# 0 => None
-# 1 => Fist
-# 2 => Thumb Up
-# 3 => Thumb Down
-# 4 => Stop
-# 5 => Catch
-# 6 => Swing
-# 7 => Phone
-# 8 => Victory
-# 9 => C
-# 10 => Okay
-# 11 => 2 fingers
-# 12 => 2 fingers horizontal
-# 13 => rock and roll
-# 14 => rock and roll horizontal
+cptGest = [[0,0] for f in range(len(gestures))]
+t = time.time()
 
+liste = glob.glob('imageNew/*.png')
+#liste = glob.glob('image/*.png')
+#liste = glob.glob('image/laouen/*.png')
+random.shuffle(liste)
 
-#Main function where pictures are taken and saved
-def captureGesture(numGestures):
-	global maxValue
-	t = time()
-	with tf.Session() as sess:
-		sess.run(tf.global_variables_initializer())
-		saver.restore(sess=sess, save_path=save_path)
-		cpt = maxValue
-		pauseState = True
-		print('Pause :', pauseState, 'Press SPACE to start')
+with tf.Session() as sess:
+  sess.run(tf.global_variables_initializer())
+  saver.restore(sess=sess, save_path=save_path)
+  for elm in tqdm(liste[:5000]):
+    image_np = np.array(cv2.imread(elm,1))
+    value = int(elm.split('\\')[1].split('_')[0])
+    #cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
+    gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
+    #t2 = time.time()
+    #gray_image = cv2.equalizeHist(gray_image)
+    result = y_pred.eval({x:[gray_image], keep_prob: 1})
 
-		while cpt <= maxValue + int(sys.argv[1]):
-			image_np = cap.get_frame()
+    if np.argmax(result) == value:
+      cptGest[value][1] += 1
+      #print(gestures[np.argmax(result)], 1/(time.time() - t), 1/(time.time() - t2))
+    else:
+      cptGest[value][0] += 1
+      cptGest[value][1] += 1
+      #print(gestures[np.argmax(result)], gestures[value], 1/(time.time() - t), 1/(time.time() - t2))
+      #input()
 
-			cv2.imshow('object detection', cv2.resize(image_np, cameraSize))
-			if time() - t > 0.1 and not(pauseState):
-				save_image = cv2.resize(image_np, (imgSize,imgSize))
-				gray_image = cv2.cvtColor(cv2.resize(image_np, (64,64)), cv2.COLOR_BGR2GRAY)
-				gray_image = cv2.equalizeHist(gray_image)
-				#print(gray_image)
-				result = y_pred.eval({x:[gray_image], keep_prob: 1})
+    
+    t = time.time()
+    if cv2.waitKey(5) & 0xFF == ord('q'):
+      cv2.destroyAllWindows()
+      break
 
-				print(gestures[np.argmax(result)])
-				if np.argmax(result) != numGestures: 
-					print('New picture', cpt)
-					cpt += 1
-					t = time()
-					cv2.imwrite('./imageNew/' + str(numGestures) + '_' + str(cpt) +'.png', save_image)
-
-			key = cv2.waitKey(25) & 0xFF 
-			if key == ord(' '):
-				pauseState = not(pauseState)
-				print('Pause :', pauseState, 'Press SPACE to change state')	
-			elif key == ord('q'):
-				cv2.destroyAllWindows()
-				break
-
-#Create a save folder if it doesn't exist
-save_dir = 'imageNew/'
-if not os.path.exists(save_dir):
-    os.makedirs(save_dir)
-
-
-#Automatically get the last index of saved images
-liste = glob.glob(save_dir + '*.png')
-maxValue = -1
-for elm in liste:
-	value = int(elm.split('_')[1].split('.')[0])
-	if value > maxValue:
-		maxValue = value
-
-#Now we take images for each gesture
-for g in range(nbClass):
-	print('Run capture :', gestures[g])
-	captureGesture(g)
+print(cptGest)
+for x,elm in enumerate(cptGest):
+  print(gestures[x],elm[0]/elm[1]*100)

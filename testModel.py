@@ -151,7 +151,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_model/'
+save_dir = 'final_modelRefine/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -164,6 +164,9 @@ gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', \
 
 cap = cv2.VideoCapture(0)
 t = time.time()
+
+
+
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
@@ -176,7 +179,7 @@ with tf.Session() as sess:
     gray_image = cv2.equalizeHist(gray_image)
     result = y_pred.eval({x:[gray_image], keep_prob: 1})
 
-    if np.max(result) > 0.7:
+    if np.max(result) > 0.2:
       print(gestures[np.argmax(result)], 1/(time.time() - t), 1/(time.time() - t2))
     else:
       print(1/(time.time() - t), 1/(time.time() - t2))

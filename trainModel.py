@@ -175,7 +175,7 @@ print(layer_flat)
 print(layer_f)
 rate = tf.placeholder(tf.float32, shape=[])
 
-l_rate = 0.0001#5e-4
+l_rate = 0.00003#5e-4
 drop_rate = 0.60
 beta = 0.001
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_f,labels=y)) \
@@ -197,54 +197,54 @@ t = time()
 compteur = 0
 prec = 10e100
 with tf.Session() as sess:
-	sess.run(tf.global_variables_initializer())
-	saver.restore(sess=sess, save_path=save_path)
-	res, epoch = [0 for x in range(n_classes)], 0
-	  
-	while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
-		epoch_loss = 0
-		epoch += 1
-		for name in [0,26000]:
-			X_train, y_train = recupTrain('dataTrainRefine', name)
-			for g in range(0,len(X_train),batch_size):
-				_, c = sess.run([optimizer, cost], feed_dict={rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
+  sess.run(tf.global_variables_initializer())
+  saver.restore(sess=sess, save_path=save_path)
+  res, epoch = [0 for x in range(n_classes)], 0
+    
+  while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
+    epoch_loss = 0
+    epoch += 1
+    for name in [0,26000]:
+      X_train, y_train = recupTrain('dataTrainRefine', name)
+      for g in range(0,len(X_train),batch_size):
+        _, c = sess.run([optimizer, cost], feed_dict={rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
 
-				sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
-				sys.stdout.flush()
-				epoch_loss += c
+        sys.stdout.write('\r' + str(g) + '/' + str(len(X_train)))
+        sys.stdout.flush()
+        epoch_loss += c
 
-		tempsEcoule = time() - t
+      tempsEcoule = time() - t
 
-		sys.stdout.write('\rEpoch : ' + str(epoch) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
-		   + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
-		res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
-		res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
+      sys.stdout.write('\rEpoch : ' + str(epoch) + '.' + str(name) + ' Loss : ' + str(epoch_loss) + ' Batch size : ' + str(batch_size) \
+         + ' LRate : ' + str(l_rate) + ' DropRate : ' + str(drop_rate) + ' Time : ' + str(tempsEcoule))
+      res2 = accuracy.eval({x:X_train[:batch_size], y:y_train[:batch_size], keep_prob: 1})
+      res3 = accuracy.eval({x:X_test[:batch_size], y:y_test[:batch_size], keep_prob: 1})
 
-		for no in range(n_classes):
-			res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
-		sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
-		for no in range(n_classes):
-			sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
-		sys.stdout.write('\n')
-		t = time()
+      for no in range(n_classes):
+        res[no] = accuracy.eval({x:X_testClass[no][:batch_size], y:y_testClass[no][:batch_size], keep_prob: 1})
+      sys.stdout.write('\nTrain : ' + str(res2) + ' Test : ' + str(res3))
+      for no in range(n_classes):
+        sys.stdout.write(' Test class' + str(no) + ' : ' + str(res[no]))
+      sys.stdout.write('\n')
+      t = time()
 
-		if epoch_loss > prec:
-			compteur += 1
-		else:
-			if compteur > 0:
-				compteur -= 1
-			prec = epoch_loss
-			#saver.save(sess=sess, save_path=save_path)
-		if compteur >= 2:
-			compteur = 0
-			l_rate /= 1.5
-			#batch_size = int(batch_size*1.5)
+    if epoch_loss > prec:
+    	compteur += 1
+    else:
+    	if compteur > 0:
+    		compteur -= 1
+    	prec = epoch_loss
+    	saver.save(sess=sess, save_path=save_path)
+    if compteur >= 2:
+    	compteur = 0
+    	l_rate /= 1.5
+    	#batch_size = int(batch_size*1.5)
 
-	res2, res = 0, 0
-	for g in range(0,len(X_train),batch_size):
-	  res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
-	res2 /= (g/batch_size) + 1
-	for g in range(0,len(X_test),batch_size):
-	  res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
-	res /= (g/batch_size) + 1
-	print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)
+  res2, res = 0, 0
+  for g in range(0,len(X_train),batch_size):
+    res2 += accuracy.eval({x:X_train[g:g+batch_size], y:y_train[g:g+batch_size], keep_prob: 1})
+  res2 /= (g/batch_size) + 1
+  for g in range(0,len(X_test),batch_size):
+    res += accuracy.eval({x:X_test[g:g+batch_size], y:y_test[g:g+batch_size], keep_prob: 1})
+  res /= (g/batch_size) + 1
+  print('Epoch', epoch,'loss :',epoch_loss,'train :',res2,'test :', res)

@@ -143,7 +143,7 @@ liste = glob.glob('./image/*.png')
 listeLaouen = glob.glob('./image/laouen/*.png')
 listeRefine = glob.glob('./imageNew/*.png')
 liste = liste + listeLaouen + listeRefine
-
+#liste = listeRefine
 random.shuffle(liste)
 
 print(len(liste), 'images to load !')
@@ -152,7 +152,7 @@ print(len(liste), 'images to load !')
 	At the end there is 3-4 files of 1.5 Go each
 """
 
-batch_size = 26000
+batch_size = 27000
 for x in range(0,len(liste),batch_size):
 	recup(liste[x:x+batch_size])
 	print(x,len(data))
