@@ -152,7 +152,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_modelRefine/'
+save_dir = 'final_model/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -166,7 +166,7 @@ gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', \
 cptGest = [[0,0] for f in range(len(gestures))]
 t = time.time()
 
-liste = glob.glob('imageNew/*.png')
+liste = glob.glob('./image/anto/*.png')
 #liste = glob.glob('image/*.png')
 #liste = glob.glob('image/laouen/*.png')
 random.shuffle(liste)
@@ -174,12 +174,12 @@ random.shuffle(liste)
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
   saver.restore(sess=sess, save_path=save_path)
-  for elm in tqdm(liste[:5000]):
+  for elm in tqdm(liste[:500]):
     image_np = np.array(cv2.imread(elm,1))
     value = int(elm.split('\\')[1].split('_')[0])
     #cv2.imshow('object detection', cv2.resize(image_np, (400,300)))
     gray_image = cv2.cvtColor(cv2.resize(image_np, (imgSize,imgSize)), cv2.COLOR_BGR2GRAY)
-    #t2 = time.time()
+    t2 = time.time()
     #gray_image = cv2.equalizeHist(gray_image)
     result = y_pred.eval({x:[gray_image], keep_prob: 1})
 

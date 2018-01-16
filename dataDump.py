@@ -141,9 +141,10 @@ def dataTraitement():
 
 liste = glob.glob('./image/*.png')
 listeLaouen = glob.glob('./image/laouen/*.png')
-listeRefine = glob.glob('./imageNew/*.png')
-liste = liste + listeLaouen + listeRefine
-#liste = listeRefine
+listeAnto = glob.glob('./image/anto/*.png')
+listeRefine = glob.glob('./image/imageNew/*.png')
+print(len(liste), len(listeLaouen), len(listeAnto), len(listeRefine))
+liste = liste + listeLaouen + listeRefine + listeAnto
 random.shuffle(liste)
 
 print(len(liste), 'images to load !')
@@ -152,7 +153,7 @@ print(len(liste), 'images to load !')
 	At the end there is 3-4 files of 1.5 Go each
 """
 
-batch_size = 27000
+batch_size = 30000
 for x in range(0,len(liste),batch_size):
 	recup(liste[x:x+batch_size])
 	print(x,len(data))
@@ -163,7 +164,7 @@ for x in range(0,len(liste),batch_size):
 
 	print('Ready to dump')
 
-	save_dir = './dataTrainRefine/'
+	save_dir = './dataTrain/'
 	if not os.path.exists(save_dir):
 	    os.makedirs(save_dir)
 

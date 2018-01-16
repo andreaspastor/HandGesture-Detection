@@ -92,7 +92,7 @@ def new_fc_layer(name,input,          # The previous layer.
     return layer, weights
 
 
-X_test, y_test, X_testClass, y_testClass = recupTest('dataTrainRefine',0)
+X_test, y_test, X_testClass, y_testClass = recupTest('dataTrain',0)
 
 
 # Convolutional Layer 1.
@@ -166,7 +166,7 @@ layer_f, weights_f = new_fc_layer("fc",input=layer_flat,
                          num_outputs=n_classes,
                          use_nonlinear=False)
 
-y_pred = tf.nn.softmax(layer_f)
+y_pred = tf.nn.softmax(layer_f,name="output")
 y_pred_cls = tf.argmax(y_pred, dimension=1)
 get_test = tf.argmax(y_test,dimension=1)
 
@@ -187,7 +187,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_modelRefine/'
+save_dir = 'final_modelRetrain/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -204,8 +204,8 @@ with tf.Session() as sess:
   while epoch < hm_epochs:# and sum(res)/len(res) < 0.99:
     epoch_loss = 0
     epoch += 1
-    for name in [0,26000]:
-      X_train, y_train = recupTrain('dataTrainRefine', name)
+    for name in [0,30000]:
+      X_train, y_train = recupTrain('dataTrain', name)
       for g in range(0,len(X_train),batch_size):
         _, c = sess.run([optimizer, cost], feed_dict={rate: l_rate, keep_prob: drop_rate, x: X_train[g:g+batch_size], y: y_train[g:g+batch_size]})
 
