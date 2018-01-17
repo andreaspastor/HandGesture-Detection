@@ -136,16 +136,21 @@ def dataTraitement():
 	print('Ready to dump')
 	return X_train, X_test, XClassTest, y_train, y_test, YClassTest
 
+liste = []
 
-
-
-liste = glob.glob('./image/*.png')
+file = open("./fileNamePictures.txt","r")
+ligne = file.readline()
+while ligne != "":
+	liste.append(ligne[:-1])
+	ligne = file.readline()
+file.close()
+"""liste = glob.glob('./image/*.png')
 listeLaouen = glob.glob('./image/laouen/*.png')
 listeAnto = glob.glob('./image/anto/*.png')
 listeRefine = glob.glob('./image/imageNew/*.png')
 print(len(liste), len(listeLaouen), len(listeAnto), len(listeRefine))
 liste = liste + listeLaouen + listeRefine + listeAnto
-random.shuffle(liste)
+random.shuffle(liste)"""
 
 print(len(liste), 'images to load !')
 
@@ -164,7 +169,7 @@ for x in range(0,len(liste),batch_size):
 
 	print('Ready to dump')
 
-	save_dir = './dataTrain/'
+	save_dir = './dataTrainNew/'
 	if not os.path.exists(save_dir):
 	    os.makedirs(save_dir)
 

@@ -152,7 +152,7 @@ correct = tf.equal(tf.argmax(layer_f, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
 saver = tf.train.Saver()
-save_dir = 'final_model/'
+save_dir = 'final_modelRetrain2/'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 save_path = os.path.join(save_dir, 'best_model')
@@ -166,9 +166,11 @@ gestures = ['None', 'fist', 'thumb up', 'thumb down', 'stop', \
 cptGest = [[0,0] for f in range(len(gestures))]
 t = time.time()
 
-liste = glob.glob('./image/anto/*.png')
-#liste = glob.glob('image/*.png')
+liste = glob.glob('./image/imageNew/*.png')
+#liste = glob.glob('./image/anto/*.png')
+liste = glob.glob('image/*.png')
 #liste = glob.glob('image/laouen/*.png')
+#liste = glob.glob('imageNew/*.png')
 random.shuffle(liste)
 
 with tf.Session() as sess:
